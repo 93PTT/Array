@@ -681,17 +681,20 @@ $('exportBtn').onclick=async()=>{
  if(!pads.length){setStatus('Chưa có tọa độ để xuất DXF.',true);return}
  const exportingSelection=selectedPads.size>0;
  const all=(exportingSelection?[...selectedPads].sort((a,b)=>a-b).map(i=>pads[i]):pads).map(p=>({...p}));
+ const mmPerUnit={um:0.001,mm:1,in:25.4,mil:0.0254}[unit()]||1;
  let out='';const pair=(c,v)=>{out+=c+'\n'+v+'\n'};
- pair(0,'SECTION');pair(2,'HEADER');pair(9,'$INSUNITS');pair(70,{in:1,mm:4,um:13,mil:9}[unit()]||4);pair(0,'ENDSEC');
+ // DXF geometry is normalized to millimeters so CAD importers using mm defaults preserve physical size.
+ pair(0,'SECTION');pair(2,'HEADER');pair(9,'$INSUNITS');pair(70,4);pair(0,'ENDSEC');
  pair(0,'SECTION');pair(2,'ENTITIES');
  for(const p of all){
-  const padW=p.type==='circle'?p.d:p.w,padH=p.type==='circle'?p.d:p.h;
-  if(p.type==='circle'){pair(0,'CIRCLE');pair(8,'PADS');pair(10,p.x);pair(20,p.y);pair(30,0);pair(40,p.d/2)}
-  else{const x0=p.x-p.w/2,x1=p.x+p.w/2,y0=p.y-p.h/2,y1=p.y+p.h/2;
+  const x=p.x*mmPerUnit,y=p.y*mmPerUnit;
+  const padW=(p.type==='circle'?p.d:p.w)*mmPerUnit,padH=(p.type==='circle'?p.d:p.h)*mmPerUnit;
+  if(p.type==='circle'){pair(0,'CIRCLE');pair(8,'PADS');pair(10,x);pair(20,y);pair(30,0);pair(40,p.d*mmPerUnit/2)}
+  else{const x0=x-padW/2,x1=x+padW/2,y0=y-padH/2,y1=y+padH/2;
    [[x0,y0,x1,y0],[x1,y0,x1,y1],[x1,y1,x0,y1],[x0,y1,x0,y0]].forEach(([a,b2,c,d])=>{pair(0,'LINE');pair(8,'PADS');pair(10,a);pair(20,b2);pair(30,0);pair(11,c);pair(21,d);pair(31,0)})}
   if(!hidePadLabels){const labels=[String(p.number??''),String(p.name??'')],longest=Math.max(...labels.map(s=>s.length),1);
    const textHeight=Math.min(padH*.28,padW*.72/(longest*.65));
-   labels.forEach((label,i)=>{if(!label)return;const y=p.y+(i===0?textHeight*.55:-textHeight*.55);pair(0,'TEXT');pair(8,'PAD_LABELS');pair(10,p.x);pair(20,y);pair(30,0);pair(40,textHeight);pair(1,label);pair(7,'STANDARD');pair(72,1);pair(73,2);pair(11,p.x);pair(21,y);pair(31,0)})}
+   labels.forEach((label,i)=>{if(!label)return;const labelY=y+(i===0?textHeight*.55:-textHeight*.55);pair(0,'TEXT');pair(8,'PAD_LABELS');pair(10,x);pair(20,labelY);pair(30,0);pair(40,textHeight);pair(1,label);pair(7,'STANDARD');pair(72,1);pair(73,2);pair(11,x);pair(21,labelY);pair(31,0)})}
  }
  pair(0,'ENDSEC');pair(0,'EOF');
  const blob=new Blob([out],{type:'application/dxf'}),filename=exportingSelection?'padplot-selected-'+unit()+'.dxf':'padplot-'+unit()+'.dxf';
@@ -699,14 +702,14 @@ $('exportBtn').onclick=async()=>{
   try{
    const handle=await window.showSaveFilePicker({suggestedName:filename,types:[{description:'DXF drawing',accept:{'application/dxf':['.dxf']}}]});
    const writable=await handle.createWritable();await writable.write(blob);await writable.close();
-   setStatus('Đã lưu '+(exportingSelection?'DXF gồm '+all.length+' pad đã chọn: ':'DXF: ')+handle.name+' (giữ nguyên tọa độ đang hiển thị).');return
+   setStatus('Đã lưu '+(exportingSelection?'DXF gồm '+all.length+' pad đã chọn: ':'DXF: ')+handle.name+' (đã quy đổi từ '+unit()+' sang mm, giữ nguyên kích thước vật lý).');return
   }catch(error){
    if(error.name==='AbortError'){setStatus('Đã hủy lưu DXF.');return}
    setStatus('Không mở được hộp thoại lưu DXF: '+error.message,true);return
   }
  }
  const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
- setStatus('Đã tải '+(exportingSelection?'DXF gồm '+all.length+' pad đã chọn.':'DXF')+' theo đúng tọa độ đang hiển thị. Hãy chọn thư mục lưu nếu trình duyệt yêu cầu.')};
+ setStatus('Đã tải '+(exportingSelection?'DXF gồm '+all.length+' pad đã chọn.':'DXF')+' đã quy đổi từ '+unit()+' sang mm, giữ nguyên kích thước vật lý.')};
 
 function setCopyCadMode(enabled){copyCadMode=enabled;$('copyCadBtn').classList.toggle('active',enabled);$('copyCadBtn').setAttribute('aria-pressed',String(enabled));canvas.style.cursor=enabled?'crosshair':'grab';if(!enabled)selectionRect=null;draw();if(enabled)setStatus('Copy CAD đang bật: kéo chuột trái để quét chọn các pad. Bấm lại để tắt; Xuất DXF sẽ lưu vùng đã chọn.')}
 $('copyCadBtn').onclick=()=>setCopyCadMode(!copyCadMode);
@@ -738,7 +741,18 @@ function endPan(e){if(!dragState)return;const finished=dragState,wasClick=!finis
 canvas.addEventListener('pointerup',endPan);
 canvas.addEventListener('pointercancel',endPan);
 canvas.addEventListener('lostpointercapture',endPan);
-canvas.addEventListener('wheel',e=>{e.preventDefault();scale=Math.max(.001,Math.min(1000,scale*(e.deltaY<0?1.12:.89)));if(Math.abs(scale-1)<1e-9)scale=1.0001;draw()},{passive:false});
+canvas.addEventListener('wheel',e=>{
+ e.preventDefault();
+ const rect=canvas.getBoundingClientRect(),w=rect.width,h=rect.height,m=42,aw=w-m*2,ah=h-m*2,b=bounds();
+ const sx=Math.max(b.x1-b.x0,1e-9),sy=Math.max(b.y1-b.y0,1e-9);
+ const oldScale=scale===1?Math.max(.001,Math.min(aw/sx,ah/sy,100)):scale;
+ const delta=e.deltaMode===1?e.deltaY*16:e.deltaMode===2?e.deltaY*h:e.deltaY;
+ const factor=Math.exp(-delta*.00035),newScale=Math.max(.001,Math.min(1000,oldScale*factor));
+ const ratio=newScale/oldScale,cx=m+aw/2,cy=m+ah/2,pointerX=e.clientX-rect.left,pointerY=e.clientY-rect.top;
+ viewPan.x=pointerX-cx-(pointerX-cx-viewPan.x)*ratio;
+ viewPan.y=pointerY-cy-(pointerY-cy-viewPan.y)*ratio;
+ scale=Math.abs(newScale-1)<1e-9?1.0001:newScale;draw()
+},{passive:false});
 new ResizeObserver(resize).observe(canvas.parentElement);
 new ResizeObserver(()=>update()).observe(document.querySelector('.list-wrap'));
 update();resize();
