@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DUT</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+:root{font-family:Inter,"Segoe UI",Arial,sans-serif;color:#18313a;background:#f8f2e8;--ink:#18313a;--muted:#75868a;--line:#dce3df;--teal:#147c83;--cream:#fffdf8}
+*{box-sizing:border-box}
+body{margin:0;min-width:340px;min-height:100vh;background:#f8f2e8}
+.app{width:calc(100vw - 32px);height:calc(100vh - 32px);min-height:500px;margin:16px auto;padding:10px;display:grid;grid-template-columns:minmax(0,1fr) 220px minmax(0,1fr);gap:9px}
+.panel,.actions{background:var(--cream);border:2px solid var(--ink);border-radius:10px;min-width:0;min-height:0}
+.panel{padding:11px;overflow:hidden;display:flex;flex-direction:column}
+.panel-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;min-height:25px}
+h1,h2{font-size:14px;margin:0}
+.panel-heading h2{font-size:14px}
+.badge{border-radius:9px;padding:4px 7px;background:#e5f2ee;color:#147c83;font-size:10px;font-weight:700;white-space:nowrap}
+.table-wrap{flex:1;min-height:0;overflow:auto;border:1px solid #b9c9c4;border-radius:2px}
+table{width:100%;height:100%;border-collapse:collapse;table-layout:fixed;font-size:10px}
+th{position:sticky;top:0;z-index:1;background:#edf5f1;text-align:center;color:#405961;padding:5px 3px;border:1px solid #bdcdc8}
+td{text-align:center;vertical-align:middle;padding:1px 4px;border:1px solid #d4dfda;height:15px;line-height:12px;overflow:hidden;white-space:nowrap}
+td[contenteditable=true]:focus{outline:2px solid var(--teal);outline-offset:-2px;background:#fff}
+td.index{background:#f5f7f5;color:#607176;user-select:none}
+.actions{padding:12px;display:flex;flex-direction:column;gap:8px;overflow:auto}
+.actions h2{margin:0 0 3px}
+.file-label{display:block;padding:8px;border:1px dashed #91aaa5;border-radius:3px;background:#e4f3e9;color:#286b46;font-size:11px;font-weight:700;text-align:center;cursor:pointer}
+.file-label input{display:none}
+label{display:block;font-size:10px;font-weight:700;color:#405961;margin:5px 0 4px}
+input,select{width:100%;height:30px;border:1px solid #cbd6d3;border-radius:3px;padding:5px 8px;font:inherit;font-size:11px;color:var(--ink);background:#fff;outline:none}
+input:focus,select:focus{border-color:var(--teal);box-shadow:0 0 0 2px #147c8318}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.field-block{border-top:1px solid var(--line);padding-top:7px;margin-top:2px}
+button{width:100%;min-height:42px;border:1px solid var(--ink);border-radius:4px;padding:8px 12px;background:#e3f1ee;color:var(--ink);font:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+button:hover{background:#cfe7e1;box-shadow:2px 2px 0 #18313a}
+.map-button{min-height:40px;margin-top:0;background:#e7f2f5;border-color:#77a9b8;color:#285b70;font-size:11px}
+.map-button:hover{background:#d5e9ee}
+.create-dut-button{background:#668f65;border-color:#668f65;color:#fff}
+.create-dut-button:hover{background:#537b52}
+.create-dut-button.generated{background:#df3f45;border-color:#bd2730;color:#fff;box-shadow:inset 0 0 0 2px #ffffff65,0 0 0 2px #df3f4555}
+.export-csv-button{background:#e4f3e9;border-color:#69a77b;color:#286b46}
+.export-csv-button:hover{background:#d3eadb}
+dialog{width:min(1000px,94vw);max-width:none;max-height:88vh;padding:0;border:2px solid var(--ink);border-radius:10px;background:var(--cream);color:var(--ink);box-shadow:0 18px 70px #10252d55;overflow:hidden}
+dialog::backdrop{background:#10252d80;backdrop-filter:blur(2px)}
+.dialog-content{display:flex;flex-direction:column;max-height:88vh;padding:16px;gap:10px}
+.dialog-head,.dialog-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.dialog-head h2{margin:0;font-size:16px}
+.dialog-help{margin:0;color:var(--muted);font-size:11px}
+.map-sheet-wrap{flex:1;min-height:250px;overflow:auto;border:1px solid #b9c9c4;background:#fff}
+.map-sheet{width:max-content;min-width:100%;height:auto;border-collapse:collapse;table-layout:fixed;font-size:11px}
+.map-sheet th,.map-sheet td{height:30px;min-width:74px;padding:3px 6px;border:1px solid #d4dfda;text-align:center}
+.map-sheet th{position:sticky;top:0;background:#edf5f1;z-index:2}
+.map-sheet th:first-child{left:0;z-index:3;min-width:38px;width:38px}
+.map-sheet td.map-cell{background:#fff;outline:none}
+.map-sheet td.map-cell:focus{outline:2px solid var(--teal);outline-offset:-2px;background:#f5fffc}
+.dialog-actions{justify-content:flex-end}
+.dialog-actions button{width:auto;min-width:110px}
+.cancel-button{background:#f6f3ec}
+.ok-button{background:var(--teal);border-color:var(--teal);color:#fff}
+.ok-button:hover{background:#0e6e75}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:900px){.app{height:auto;min-height:100vh;grid-template-columns:1fr;grid-template-rows:minmax(320px,1fr) auto minmax(320px,1fr);margin:0;width:100%;padding:8px}.actions{order:2}.panel:first-child{order:1}.panel:last-child{order:3}}
+</style>
+</head>
+<body>
+<main class="app" aria-label="Quản lý vị trí DUT">
+  <section class="panel" aria-labelledby="dut1Title">
+    <div class="panel-heading"><h2 id="dut1Title">Input</h2><span id="padCount" class="badge">0 pad</span></div>
+    <div class="table-wrap"><table aria-label="Tọa độ pad đầu vào">
+      <thead><tr><th style="width:38px">STT</th><th id="padXHead">X (um)</th><th id="padYHead">Y (um)</th><th>Pad number</th><th>Pad name</th></tr></thead>
+      <tbody id="padRows"></tbody>
+    </table></div>
+  </section>
+
+  <aside class="actions" aria-label="Thiết lập DUT">
+    <h2>Chức năng DUT</h2>
+    <label class="file-label">⇧ Chọn file CSV<input id="csvFile" type="file" accept=".csv,text/csv,text/plain"></label>
+    <div><label for="unit">Đơn vị XY</label><select id="unit"><option value="um" selected>um</option><option value="mm">mm</option><option value="in">inch</option><option value="mil">mil</option></select></div>
+    <div class="field-block">
+      <label>Stepping distance</label>
+      <div class="grid2"><div><label for="stepX">X (<span class="unitLabel">um</span>)</label><input id="stepX" type="number" step="any" placeholder="0"></div><div><label for="stepY">Y (<span class="unitLabel">um</span>)</label><input id="stepY" type="number" step="any" placeholder="0"></div></div>
+    </div>
+    <div class="field-block">
+      <label>Skip DUT</label>
+      <div class="grid2"><div><label for="skipX">X</label><input id="skipX" type="number" step="1" min="0" value="0"></div><div><label for="skipY">Y</label><input id="skipY" type="number" step="1" min="0" value="0"></div></div>
+    </div>
+    <button id="openMapBtn" class="map-button" type="button">Map</button>
+    <button id="createDutBtn" class="create-dut-button" type="button">Tạo Dut</button>
+    <button id="exportCsvBtn" class="export-csv-button" type="button">Xuất kết quả ra CSV</button>
+  </aside>
+
+  <section class="panel" aria-labelledby="dutMapTitle">
+    <div class="panel-heading"><h2 id="dutMapTitle">Output</h2><span id="dutCount" class="badge">0 pad · 0 DUT</span></div>
+    <div class="table-wrap"><table aria-label="Tọa độ pad kèm tên DUT">
+      <thead><tr><th style="width:38px">STT</th><th id="dutXHead">X (um)</th><th id="dutYHead">Y (um)</th><th>Pad number</th><th>Pad name</th><th style="width:72px">Tên DUT</th></tr></thead>
+      <tbody id="dutRows"></tbody>
+    </table></div>
+  </section>
+</main>
+<dialog id="mapDialog" aria-labelledby="mapDialogTitle">
+  <form method="dialog" class="dialog-content" id="mapForm">
+    <div class="dialog-head"><h2 id="mapDialogTitle">Map DUT</h2><span id="mapSize" class="badge">0 DUT</span></div>
+    <p class="dialog-help">Nhập tên DUT vào từng ô hoặc dán nguyên vùng từ Excel. Cột là chiều X, hàng là chiều Y; ô trống là vị trí bỏ qua. Skip X/Y thêm số bước trống giữa các vị trí.</p>
+    <div class="map-sheet-wrap"><table class="map-sheet" aria-label="Bảng Map DUT"><thead id="mapHead"></thead><tbody id="mapBody"></tbody></table></div>
+    <div class="dialog-actions"><button id="cancelMapBtn" class="cancel-button" type="button">Hủy</button><button id="okMapBtn" class="ok-button" type="button">OK</button></div>
+  </form>
+</dialog>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const padFields=['x','y','number','name'];
+const dutFields=['x','y','number','padName','dut'];
+const pads=[];
+const duts=[];
+let savedMap=[],workingMap=[];
+const unit=()=>$('unit').value;
+const clean=value=>String(value??'').replace(/\u00a0/g,' ').trim();
+const toNum=value=>{let text=clean(value).replace(/\s/g,'');if(!text)return NaN;if(/^[-+]?\d+,\d+$/.test(text))text=text.replace(',','.');return Number(text)};
+
+function rowCountFor(tableBody,data){
+  const wrap=tableBody.closest('.table-wrap');
+  const header=wrap.querySelector('thead').getBoundingClientRect().height;
+  return Math.max(data.length+4,Math.ceil(Math.max(0,wrap.clientHeight-header)/15),14);
+}
+
+function renderTable(bodyId,data,fields){
+  const body=$(bodyId);
+  body.replaceChildren();
+  const count=rowCountFor(body,data);
+  for(let rowIndex=0;rowIndex<count;rowIndex++){
+    const tr=document.createElement('tr');
+    const indexCell=document.createElement('td');
+    indexCell.className='index';
+    indexCell.textContent=String(rowIndex+1);
+    tr.append(indexCell);
+    for(const field of fields){
+      const td=document.createElement('td');
+      td.contentEditable='true';
+      td.spellcheck=false;
+      td.dataset.row=String(rowIndex);
+      td.dataset.field=field;
+      td.textContent=data[rowIndex]?.[field]??'';
+      td.title='Có thể nhập hoặc dán vùng dữ liệu từ Excel bắt đầu tại ô này';
+      td.addEventListener('blur',()=>{
+        const value=clean(td.textContent);
+        if(value){data[rowIndex]??={};data[rowIndex][field]=value}
+        else if(data[rowIndex])delete data[rowIndex][field];
+        updateCounts();
+      });
+      tr.append(td);
+    }
+    body.append(tr);
+  }
+}
+
+function updateCounts(){
+  const count=pads.filter(row=>row&&('x'in row||'y'in row||'number'in row||'name'in row)).length;
+  $('padCount').textContent=count+' pad';
+  const dutNames=new Set(duts.map(row=>clean(row?.dut)).filter(Boolean));
+  $('dutCount').textContent=duts.filter(row=>row&&('x'in row||'y'in row||'number'in row||'padName'in row||'dut'in row)).length+' pad · '+dutNames.size+' DUT';
+}
+
+function render(){
+  renderTable('padRows',pads,padFields);
+  renderTable('dutRows',duts,dutFields);
+  const currentUnit=unit();
+  $('padXHead').textContent='X ('+currentUnit+')';
+  $('padYHead').textContent='Y ('+currentUnit+')';
+  $('dutXHead').textContent='X ('+currentUnit+')';
+  $('dutYHead').textContent='Y ('+currentUnit+')';
+  document.querySelectorAll('.unitLabel').forEach(label=>label.textContent=currentUnit);
+  updateCounts();
+}
+
+function parseClipboard(text){
+  return text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n').replace(/\n+$/,'').split('\n').map(line=>line.split('\t'));
+}
+
+function splitDelimitedLine(line,separator){
+  const cells=[];let value='',quoted=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'&&quoted&&line[i+1]==='"'){value+='"';i++;continue}
+    if(ch==='"'){quoted=!quoted;continue}
+    if(ch===separator&&!quoted){cells.push(value.trim());value='';continue}
+    value+=ch;
+  }
+  cells.push(value.trim());return cells;
+}
+
+function parseCsv(text){
+  const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(line=>line.trim());
+  if(!lines.length)return[];
+  const separators=[',',';','\t'];
+  const separator=separators.sort((a,b)=>splitDelimitedLine(lines[0],b).length-splitDelimitedLine(lines[0],a).length)[0];
+  const records=lines.map(line=>splitDelimitedLine(line,separator));
+  const normalize=value=>clean(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/[^a-z0-9]/g,'');
+  const headers=records[0].map(normalize);
+  const find=aliases=>headers.findIndex(value=>aliases.includes(value));
+  const xIndex=find(['x','coordx','xcoord','xcoordinate','toadox']);
+  const yIndex=find(['y','coordy','ycoord','ycoordinate','toadoy']);
+  const hasHeader=xIndex>=0&&yIndex>=0;
+  const columns=hasHeader?{
+    x:xIndex,y:yIndex,
+    number:find(['padnumber','number','padno','padnum','pinno','pinnumber']),
+    name:find(['padname','name','pinname','tenpad'])
+  }:{x:0,y:1,number:2,name:3};
+  return records.slice(hasHeader?1:0).map(row=>({
+    x:toNum(row[columns.x]),y:toNum(row[columns.y]),
+    number:columns.number>=0?clean(row[columns.number]):'',
+    name:columns.name>=0?clean(row[columns.name]):''
+  })).filter(row=>Number.isFinite(row.x)&&Number.isFinite(row.y));
+}
+
+function columnName(index){
+  let label='';
+  for(let n=index+1;n>0;n=Math.floor((n-1)/26))label=String.fromCharCode(65+(n-1)%26)+label;
+  return label;
+}
+
+function mapSize(){
+  const rows=workingMap.length;
+  const cols=Math.max(0,...workingMap.map(row=>row.length));
+  const names=new Set(workingMap.flat().map(clean).filter(Boolean));
+  $('mapSize').textContent=names.size+' DUT · '+rows+' × '+cols;
+}
+
+function renderMapSheet(){
+  const rows=Math.max(12,workingMap.length);
+  const cols=Math.max(12,...workingMap.map(row=>row.length));
+  const head=$('mapHead'),body=$('mapBody');
+  head.replaceChildren();body.replaceChildren();
+  const headerRow=document.createElement('tr'),corner=document.createElement('th');
+  corner.textContent='';headerRow.append(corner);
+  for(let col=0;col<cols;col++){const th=document.createElement('th');th.textContent=columnName(col);headerRow.append(th)}
+  head.append(headerRow);
+  for(let row=0;row<rows;row++){
+    const tr=document.createElement('tr'),rowHead=document.createElement('th');
+    rowHead.textContent=String(row+1);tr.append(rowHead);
+    for(let col=0;col<cols;col++){
+      const td=document.createElement('td');td.className='map-cell';td.contentEditable='true';td.spellcheck=false;
+      td.dataset.row=String(row);td.dataset.col=String(col);td.textContent=workingMap[row]?.[col]??'';
+      td.title='Nhập tên DUT hoặc để trống để bỏ qua vị trí';
+      td.addEventListener('input',()=>{workingMap[row]??=[];workingMap[row][col]=clean(td.textContent);mapSize()});
+      tr.append(td);
+    }
+    body.append(tr);
+  }
+  mapSize();
+}
+
+function openMap(){
+  workingMap=savedMap.map(row=>row.slice());
+  renderMapSheet();
+  $('mapDialog').showModal();
+  $('mapBody').querySelector('.map-cell')?.focus();
+}
+
+function trimMap(matrix){
+  const result=matrix.map(row=>row.map(value=>clean(value)));
+  while(result.length&&result[result.length-1].every(value=>!value))result.pop();
+  let cols=Math.max(0,...result.map(row=>row.length));
+  while(cols>0&&result.every(row=>!row[cols-1]))cols--;
+  return result.map(row=>row.slice(0,cols));
+}
+
+document.addEventListener('paste',event=>{
+  const cell=event.target.closest?.('td[contenteditable="true"]');
+  if(!cell)return;
+  if(cell.classList.contains('map-cell')){
+    const values=parseClipboard(event.clipboardData?.getData('text/plain')||'');
+    if(!values.length)return;
+    event.preventDefault();
+    const startRow=Number(cell.dataset.row),startCol=Number(cell.dataset.col);
+    values.forEach((valuesRow,rowOffset)=>{
+      const row=startRow+rowOffset;workingMap[row]??=[];
+      valuesRow.forEach((value,colOffset)=>workingMap[row][startCol+colOffset]=clean(value));
+    });
+    renderMapSheet();
+    return;
+  }
+  const body=cell.closest('tbody');
+  const data=body.id==='padRows'?pads:duts;
+  const fields=body.id==='padRows'?padFields:dutFields;
+  const startRow=Number(cell.dataset.row),startColumn=fields.indexOf(cell.dataset.field);
+  const values=parseClipboard(event.clipboardData?.getData('text/plain')||'');
+  if(!values.length)return;
+  event.preventDefault();
+  values.forEach((valuesRow,rowOffset)=>{
+    const rowIndex=startRow+rowOffset;
+    data[rowIndex]??={};
+    valuesRow.forEach((value,columnOffset)=>{
+      const field=fields[startColumn+columnOffset];
+      if(field)data[rowIndex][field]=clean(value);
+    });
+  });
+  render();
+});
+
+$('openMapBtn').addEventListener('click',openMap);
+$('cancelMapBtn').addEventListener('click',()=>$('mapDialog').close());
+$('okMapBtn').addEventListener('click',()=>{
+  savedMap=trimMap(workingMap);
+  const names=new Set(savedMap.flat().map(clean).filter(Boolean));
+  $('openMapBtn').title='Đã lưu map gồm '+names.size+' DUT';
+  $('mapDialog').close();
+});
+$('mapDialog').addEventListener('cancel',()=>{workingMap=[]});
+$('csvFile').addEventListener('change',async event=>{
+  const file=event.target.files?.[0];if(!file)return;
+  const rows=parseCsv(await file.text());
+  if(!rows.length){alert('Không đọc được tọa độ X/Y trong file CSV.');event.target.value='';return}
+  pads.splice(0,pads.length,...rows);
+  duts.splice(0,duts.length);
+  $('createDutBtn').classList.remove('generated');
+  $('createDutBtn').title='';
+  render();
+  event.target.value='';
+});
+$('createDutBtn').addEventListener('click',()=>{
+  const locations=[];
+  savedMap.forEach((row,rowIndex)=>row.forEach((value,colIndex)=>{const name=clean(value);if(name)locations.push({name,row:rowIndex,col:colIndex})}));
+  if(!locations.length){alert('Anh hãy nhập sơ đồ DUT trong nút Map trước.');return}
+  const validPads=pads.filter(pad=>Number.isFinite(toNum(pad.x))&&Number.isFinite(toNum(pad.y)));
+  if(!validPads.length){alert('Anh hãy nhập hoặc chọn CSV có tọa độ X/Y của Dut 1 trước.');return}
+  const stepX=toNum($('stepX').value),stepY=toNum($('stepY').value);
+  const skipX=toNum($('skipX').value),skipY=toNum($('skipY').value);
+  if(!Number.isFinite(stepX)||!Number.isFinite(stepY)||stepX<0||stepY<0){alert('Stepping distance X/Y phải là số không âm.');return}
+  if(!Number.isInteger(skipX)||!Number.isInteger(skipY)||skipX<0||skipY<0){alert('Skip DUT X/Y phải là số nguyên không âm.');return}
+  const dut1=locations.find(location=>location.name.toLowerCase().replace(/[\s_-]/g,'')==='dut1')||locations[0];
+  const pitchX=stepX*(skipX+1),pitchY=stepY*(skipY+1),generated=[];
+  for(const location of locations){
+    const offsetX=(location.col-dut1.col)*pitchX;
+    const offsetY=(dut1.row-location.row)*pitchY;
+    for(const pad of validPads){
+      generated.push({
+        dut:location.name,
+        x:String(toNum(pad.x)+offsetX),
+        y:String(toNum(pad.y)+offsetY),
+        number:clean(pad.number),
+        padName:clean(pad.name)
+      });
+    }
+  }
+  duts.splice(0,duts.length,...generated);
+  $('createDutBtn').classList.add('generated');
+  $('createDutBtn').title='Đã tạo '+generated.length+' tọa độ cho '+locations.length+' DUT';
+  render();
+});
+$('exportCsvBtn').addEventListener('click',()=>{
+  if(!duts.length){alert('Chưa có kết quả DUT để xuất. Hãy bấm Tạo Dut trước.');return}
+  const headers=['X ('+unit()+')','Y ('+unit()+')','Pad number','Pad name','Dut'];
+  const rows=duts.map(dut=>[dut.x,dut.y,dut.number,dut.padName,dut.dut]);
+  const escapeCsv=value=>'"'+String(value??'').replace(/"/g,'""')+'"';
+  const content='\uFEFF'+[headers,...rows].map(row=>row.map(escapeCsv).join(',')).join('\r\n');
+  const blob=new Blob([content],{type:'text/csv;charset=utf-8'});
+  const suggestedName='dut-output-'+unit()+'.csv';
+  if(typeof window.showSaveFilePicker==='function'){
+    window.showSaveFilePicker({
+      suggestedName,
+      types:[{description:'CSV',accept:{'text/csv':['.csv']}}]
+    }).then(async handle=>{
+      const writable=await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+    }).catch(error=>{
+      if(error.name!=='AbortError')alert('Không lưu được file CSV: '+error.message);
+    });
+    return;
+  }
+  const fileName=prompt('Nhập tên file CSV:',suggestedName);
+  if(!fileName)return;
+  const safeName=fileName.toLowerCase().endsWith('.csv')?fileName:fileName+'.csv';
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download=safeName;link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+$('unit').addEventListener('change',render);
+document.querySelectorAll('.table-wrap').forEach(wrap=>new ResizeObserver(render).observe(wrap));
+render();
+})();
+</script>
+</body>
+</html>
