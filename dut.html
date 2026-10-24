@@ -53,8 +53,12 @@ dialog::backdrop{background:#10252d80;backdrop-filter:blur(2px)}
 .map-sheet th:first-child{left:0;z-index:3;min-width:38px;width:38px}
 .map-sheet td.map-cell{background:#fff;outline:none}
 .map-sheet td.map-cell:focus{outline:2px solid var(--teal);outline-offset:-2px;background:#f5fffc}
-.dialog-actions{justify-content:flex-end}
+.dialog-actions{justify-content:space-between}
 .dialog-actions button{width:auto;min-width:110px}
+.map-directions{display:grid;grid-template-columns:repeat(3,34px);grid-template-rows:repeat(2,32px);gap:3px}
+.map-directions button{width:34px;min-width:34px;height:32px;min-height:32px;padding:0;font-size:16px;background:#e7f2f5;border-color:#77a9b8;color:#285b70}
+.map-directions button:hover{background:#d5e9ee}
+.map-dialog-actions{display:flex;align-items:center;gap:8px}
 .cancel-button{background:#f6f3ec}
 .ok-button{background:var(--teal);border-color:var(--teal);color:#fff}
 .ok-button:hover{background:#0e6e75}
@@ -78,11 +82,11 @@ dialog::backdrop{background:#10252d80;backdrop-filter:blur(2px)}
     <div><label for="unit">Đơn vị XY</label><select id="unit"><option value="um" selected>um</option><option value="mm">mm</option><option value="in">inch</option><option value="mil">mil</option></select></div>
     <div class="field-block">
       <label>Stepping distance</label>
-      <div class="grid2"><div><label for="stepX">X (<span class="unitLabel">um</span>)</label><input id="stepX" type="number" step="any" placeholder="0"></div><div><label for="stepY">Y (<span class="unitLabel">um</span>)</label><input id="stepY" type="number" step="any" placeholder="0"></div></div>
+      <div class="grid2"><div><label for="stepX">X (<span class="unitLabel">um</span>)</label><input id="stepX" type="text" inputmode="decimal" value="0" autocomplete="off"></div><div><label for="stepY">Y (<span class="unitLabel">um</span>)</label><input id="stepY" type="text" inputmode="decimal" value="0" autocomplete="off"></div></div>
     </div>
     <div class="field-block">
       <label>Skip DUT</label>
-      <div class="grid2"><div><label for="skipX">X</label><input id="skipX" type="number" step="1" min="0" value="0"></div><div><label for="skipY">Y</label><input id="skipY" type="number" step="1" min="0" value="0"></div></div>
+      <div class="grid2"><div><label for="skipX">X</label><input id="skipX" type="text" inputmode="numeric" value="0" autocomplete="off"></div><div><label for="skipY">Y</label><input id="skipY" type="text" inputmode="numeric" value="0" autocomplete="off"></div></div>
     </div>
     <button id="openMapBtn" class="map-button" type="button">Map</button>
     <button id="createDutBtn" class="create-dut-button" type="button">Tạo Dut</button>
@@ -99,10 +103,15 @@ dialog::backdrop{background:#10252d80;backdrop-filter:blur(2px)}
 </main>
 <dialog id="mapDialog" aria-labelledby="mapDialogTitle">
   <form method="dialog" class="dialog-content" id="mapForm">
-    <div class="dialog-head"><h2 id="mapDialogTitle">Map DUT</h2><span id="mapSize" class="badge">0 DUT</span></div>
-    <p class="dialog-help">Nhập tên DUT vào từng ô hoặc dán nguyên vùng từ Excel. Cột là chiều X, hàng là chiều Y; ô trống là vị trí bỏ qua. Skip X/Y thêm số bước trống giữa các vị trí.</p>
+    <div class="dialog-head"><h2 id="mapDialogTitle">Map</h2><span id="mapSize" class="badge">0 DUT</span></div>
     <div class="map-sheet-wrap"><table class="map-sheet" aria-label="Bảng Map DUT"><thead id="mapHead"></thead><tbody id="mapBody"></tbody></table></div>
-    <div class="dialog-actions"><button id="cancelMapBtn" class="cancel-button" type="button">Hủy</button><button id="okMapBtn" class="ok-button" type="button">OK</button></div>
+    <div class="dialog-actions">
+      <div class="map-directions" aria-label="Hướng tạo dãy DUT">
+        <span></span><button type="button" class="direction-button" data-arrow="↑" aria-label="Hướng lên" title="Hướng lên">↑</button><span></span>
+        <button type="button" class="direction-button" data-arrow="←" aria-label="Hướng trái" title="Hướng trái">←</button><button type="button" class="direction-button" data-arrow="↓" aria-label="Hướng xuống" title="Hướng xuống">↓</button><button type="button" class="direction-button" data-arrow="→" aria-label="Hướng phải" title="Hướng phải">→</button>
+      </div>
+      <div class="map-dialog-actions"><button id="cancelMapBtn" class="cancel-button" type="button">Hủy</button><button id="okMapBtn" class="ok-button" type="button">OK</button></div>
+    </div>
   </form>
 </dialog>
 <script>
@@ -112,7 +121,7 @@ const padFields=['x','y','number','name'];
 const dutFields=['x','y','number','padName','dut'];
 const pads=[];
 const duts=[];
-let savedMap=[],workingMap=[];
+let savedMap=[],workingMap=[],activeMapCell=null,inputLocked=false;
 const unit=()=>$('unit').value;
 const clean=value=>String(value??'').replace(/\u00a0/g,' ').trim();
 const toNum=value=>{let text=clean(value).replace(/\s/g,'');if(!text)return NaN;if(/^[-+]?\d+,\d+$/.test(text))text=text.replace(',','.');return Number(text)};
@@ -121,6 +130,10 @@ function rowCountFor(tableBody,data){
   const wrap=tableBody.closest('.table-wrap');
   const header=wrap.querySelector('thead').getBoundingClientRect().height;
   return Math.max(data.length+4,Math.ceil(Math.max(0,wrap.clientHeight-header)/15),14);
+}
+
+function setInputLocked(locked){
+  inputLocked=Boolean(locked);
 }
 
 function renderTable(bodyId,data,fields){
@@ -133,15 +146,18 @@ function renderTable(bodyId,data,fields){
     indexCell.className='index';
     indexCell.textContent=String(rowIndex+1);
     tr.append(indexCell);
+    const locked=bodyId==='padRows'&&inputLocked;
     for(const field of fields){
       const td=document.createElement('td');
-      td.contentEditable='true';
+      td.contentEditable=String(!locked);
       td.spellcheck=false;
+      td.setAttribute('aria-readonly',String(locked));
       td.dataset.row=String(rowIndex);
       td.dataset.field=field;
       td.textContent=data[rowIndex]?.[field]??'';
-      td.title='Có thể nhập hoặc dán vùng dữ liệu từ Excel bắt đầu tại ô này';
+      td.title=locked?'Input đã khóa sau khi nhập dữ liệu hàng loạt.':'Có thể nhập hoặc dán vùng dữ liệu từ Excel bắt đầu tại ô này';
       td.addEventListener('blur',()=>{
+        if(locked)return;
         const value=clean(td.textContent);
         if(value){data[rowIndex]??={};data[rowIndex][field]=value}
         else if(data[rowIndex])delete data[rowIndex][field];
@@ -218,17 +234,54 @@ function columnName(index){
   return label;
 }
 
+const mapArrows={'↑':[-1,0],'↓':[1,0],'←':[0,-1],'→':[0,1]};
+const mapKey=(row,col)=>row+','+col;
+
+function analyzeMap(matrix){
+  const formulas=[],errors=[],consumed=new Set();
+  for(let row=0;row<matrix.length;row++)for(let col=0;col<(matrix[row]?.length||0);col++){
+    const arrow=clean(matrix[row][col]);
+    if(!mapArrows[arrow])continue;
+    const [dr,dc]=mapArrows[arrow],startRow=row-dr,startCol=col-dc,endRow=row+dr,endCol=col+dc;
+    const start=clean(matrix[startRow]?.[startCol]),end=clean(matrix[endRow]?.[endCol]);
+    const startMatch=start.match(/^(.*?)(\d+)$/),endMatch=end.match(/^(.*?)(\d+)$/);
+    if(!startMatch||!endMatch||startMatch[1].toLowerCase()!==endMatch[1].toLowerCase()){
+      errors.push('Mỗi mũi tên cần có số bắt đầu ở phía sau và số kết thúc ở phía trước theo hướng mũi tên.');
+      continue;
+    }
+    const first=Number(startMatch[2]),last=Number(endMatch[2]),count=Math.abs(last-first)+1;
+    if(!Number.isSafeInteger(first)||!Number.isSafeInteger(last)||count>10000){errors.push('Dãy DUT phải là số nguyên và không vượt quá 10.000 DUT.');continue}
+    const formula={row:startRow,col:startCol,arrowRow:row,arrowCol:col,endRow,endCol,dr,dc,startPrefix:startMatch[1],first,last,count};
+    formulas.push(formula);
+    consumed.add(mapKey(startRow,startCol));consumed.add(mapKey(row,col));consumed.add(mapKey(endRow,endCol));
+  }
+  const locations=[],starts=new Map(formulas.map(formula=>[mapKey(formula.row,formula.col),formula]));
+  for(let row=0;row<matrix.length;row++)for(let col=0;col<(matrix[row]?.length||0);col++){
+    const key=mapKey(row,col),formula=starts.get(key);
+    if(formula){
+      const increment=formula.last>=formula.first?1:-1;
+      for(let i=0;i<formula.count;i++)locations.push({name:formula.startPrefix+(formula.first+increment*i),row:row+formula.dr*i,col:col+formula.dc*i});
+      continue;
+    }
+    if(consumed.has(key))continue;
+    const name=clean(matrix[row][col]);
+    if(name&&!mapArrows[name])locations.push({name,row,col});
+  }
+  return{locations,errors};
+}
+
 function mapSize(){
   const rows=workingMap.length;
   const cols=Math.max(0,...workingMap.map(row=>row.length));
-  const names=new Set(workingMap.flat().map(clean).filter(Boolean));
-  $('mapSize').textContent=names.size+' DUT · '+rows+' × '+cols;
+  const result=analyzeMap(workingMap);
+  $('mapSize').textContent=result.locations.length+' DUT · '+rows+' × '+cols;
 }
 
 function renderMapSheet(){
   const rows=Math.max(12,workingMap.length);
   const cols=Math.max(12,...workingMap.map(row=>row.length));
   const head=$('mapHead'),body=$('mapBody');
+  activeMapCell=null;
   head.replaceChildren();body.replaceChildren();
   const headerRow=document.createElement('tr'),corner=document.createElement('th');
   corner.textContent='';headerRow.append(corner);
@@ -240,7 +293,7 @@ function renderMapSheet(){
     for(let col=0;col<cols;col++){
       const td=document.createElement('td');td.className='map-cell';td.contentEditable='true';td.spellcheck=false;
       td.dataset.row=String(row);td.dataset.col=String(col);td.textContent=workingMap[row]?.[col]??'';
-      td.title='Nhập tên DUT hoặc để trống để bỏ qua vị trí';
+      td.addEventListener('focus',()=>{activeMapCell=td});
       td.addEventListener('input',()=>{workingMap[row]??=[];workingMap[row][col]=clean(td.textContent);mapSize()});
       tr.append(td);
     }
@@ -253,7 +306,7 @@ function openMap(){
   workingMap=savedMap.map(row=>row.slice());
   renderMapSheet();
   $('mapDialog').showModal();
-  $('mapBody').querySelector('.map-cell')?.focus();
+  activeMapCell=$('mapBody').querySelector('.map-cell');activeMapCell?.focus();
 }
 
 function trimMap(matrix){
@@ -294,10 +347,19 @@ document.addEventListener('paste',event=>{
       if(field)data[rowIndex][field]=clean(value);
     });
   });
+  if(body.id==='padRows')setInputLocked(true);
   render();
 });
 
 $('openMapBtn').addEventListener('click',openMap);
+$('mapDialog').querySelectorAll('.direction-button').forEach(button=>{
+  button.addEventListener('mousedown',event=>event.preventDefault());
+  button.addEventListener('click',()=>{
+    if(!activeMapCell){alert('Anh hãy chọn một ô trong Map trước.');return}
+    const row=Number(activeMapCell.dataset.row),col=Number(activeMapCell.dataset.col),arrow=button.dataset.arrow;
+    workingMap[row]??=[];workingMap[row][col]=arrow;activeMapCell.textContent=arrow;activeMapCell.focus();mapSize();
+  });
+});
 $('cancelMapBtn').addEventListener('click',()=>$('mapDialog').close());
 $('okMapBtn').addEventListener('click',()=>{
   savedMap=trimMap(workingMap);
@@ -312,19 +374,22 @@ $('csvFile').addEventListener('change',async event=>{
   if(!rows.length){alert('Không đọc được tọa độ X/Y trong file CSV.');event.target.value='';return}
   pads.splice(0,pads.length,...rows);
   duts.splice(0,duts.length);
+  setInputLocked(true);
   $('createDutBtn').classList.remove('generated');
   $('createDutBtn').title='';
   render();
   event.target.value='';
 });
 $('createDutBtn').addEventListener('click',()=>{
-  const locations=[];
-  savedMap.forEach((row,rowIndex)=>row.forEach((value,colIndex)=>{const name=clean(value);if(name)locations.push({name,row:rowIndex,col:colIndex})}));
+  const mapResult=analyzeMap(savedMap);
+  if(mapResult.errors.length){alert(mapResult.errors[0]);return}
+  const locations=mapResult.locations;
   if(!locations.length){alert('Anh hãy nhập sơ đồ DUT trong nút Map trước.');return}
   const validPads=pads.filter(pad=>Number.isFinite(toNum(pad.x))&&Number.isFinite(toNum(pad.y)));
   if(!validPads.length){alert('Anh hãy nhập hoặc chọn CSV có tọa độ X/Y của Dut 1 trước.');return}
-  const stepX=toNum($('stepX').value),stepY=toNum($('stepY').value);
-  const skipX=toNum($('skipX').value),skipY=toNum($('skipY').value);
+  const readOrZero=id=>clean($(id).value)===''?0:toNum($(id).value);
+  const stepX=readOrZero('stepX'),stepY=readOrZero('stepY');
+  const skipX=readOrZero('skipX'),skipY=readOrZero('skipY');
   if(!Number.isFinite(stepX)||!Number.isFinite(stepY)||stepX<0||stepY<0){alert('Stepping distance X/Y phải là số không âm.');return}
   if(!Number.isInteger(skipX)||!Number.isInteger(skipY)||skipX<0||skipY<0){alert('Skip DUT X/Y phải là số nguyên không âm.');return}
   const dut1=locations.find(location=>location.name.toLowerCase().replace(/[\s_-]/g,'')==='dut1')||locations[0];
