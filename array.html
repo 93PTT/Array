@@ -1,762 +1,142 @@
 <!doctype html>
 <html lang="vi">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Array</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<style>
-:root {
-  font-family:Inter,"Segoe UI",Arial,sans-serif;
-  color:#18313a;
-  background:#f8f2e8;
-  font-synthesis:none;
-  --ink:#18313a;
-  --muted:#75868a;
-  --line:#dce3df;
-  --teal:#147c83;
-  --orange:#f1763b;
-  --cream:#fffdf8;
-  --pale:#e5f2ee
-}
-* {
-  box-sizing:border-box
-}
-body {
-  margin:0;
-  min-width:340px;
-  min-height:100vh;
-  background:#f8f2e8
-}
-.app {
-  width:calc(100vw - 32px);
-  height:calc(100vh - 32px);
-  min-height:min(540px,calc(100vh - 32px));
-  margin:16px auto;
-  padding:10px;
-  display:grid;
-  grid-template-rows:minmax(0,1fr);
-  gap:9px
-}
-.panel,.actions,.drawing {
-  background:var(--cream);
-  border:2px solid var(--ink);
-  border-radius:10px
-}
-button {
-  border:1px solid var(--ink);
-  border-radius:3px;
-  padding:7px 10px;
-  font-size:11px;
-  font-weight:700;
-  cursor:pointer;
-  color:var(--ink);
-  background:#fff;
-  transition:.15s
-}
-button:hover {
-  transform:translateY(-1px);
-  box-shadow:2px 2px 0 var(--ink)
-}
-button.orange {
-  background:var(--orange);
-  color:white;
-  border-color:var(--orange)
-}
-button.soft {
-  background:#e3f1ee;
-  border-color:#7aa8a3
-}
-.file-label.csv-color {
-  color:#286b46;
-  background:#e4f3e9;
-  border-color:#69a77b
-}
-button.center-color {
-  color:#244f86;
-  background:#e5efff;
-  border-color:#7698ca
-}
-button.center-color.active {
-  color:#fff;
-  background:#df3f45;
-  border-color:#bd2730;
-  box-shadow:inset 0 0 0 2px #ffffff65,0 0 0 2px #df3f4555
-}
-button.dxf-color {
-  color:#65458d;
-  background:#f0e9fb;
-  border-color:#9b7bc4
-}
-button.copy-cad-color {
-  color:#285b70;
-  background:#e7f2f5;
-  border-color:#77a9b8
-}
-button.copy-cad-color.active {
-  color:#fff;
-  background:#df3f45;
-  border-color:#bd2730;
-  box-shadow:inset 0 0 0 2px #ffffff65,0 0 0 2px #df3f4555
-}
-.workspace {
-  min-height:0;
-  display:grid;
-  grid-template-columns:310px minmax(150px,.22fr) minmax(0,1fr);
-  gap:9px
-}
-.panel {
-  padding:11px;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column
-}
-.actions {
-  min-width:0;
-  padding:12px;
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-start;
-  gap:8px;
-  overflow:auto
-}
-.actions h2 {
-  font-size:14px;
-  margin:0 0 2px
-}
-.actions .grid2 {
-  gap:6px
-}
-.shape-switch {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:6px
-}
-.shape-switch button {
-  min-height:34px;
-  padding:6px 4px
-}
-.shape-switch button.active {
-  background:var(--teal);
-  color:#fff;
-  border-color:var(--teal);
-  box-shadow:inset 0 0 0 1px #ffffff55
-}
-.actions label {
-  margin-top:4px
-}
-.actions #circleFields,
-.actions #rectFields {
-  width:100%
-}
-.actions button {
-  width:100%;
-  min-height:40px
-}
-.panel h2 {
-  font-size:14px;
-  margin:0 0 8px
-}
-label {
-  display:block;
-  font-size:10px;
-  font-weight:700;
-  color:#405961;
-  margin:8px 0 4px
-}
-input,select {
-  width:100%;
-  height:30px;
-  border:1px solid #cbd6d3;
-  border-radius:3px;
-  padding:5px 8px;
-  font:inherit;
-  font-size:11px;
-  color:var(--ink);
-  background:white;
-  outline:none
-}
-input:focus,select:focus {
-  border-color:var(--teal);
-  box-shadow:0 0 0 2px #147c8318
-}
-input[type=number] {
-  appearance:textfield;
-  -moz-appearance:textfield
-}
-input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button {
-  -webkit-appearance:none;
-  margin:0
-}
-.grid2 {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:7px
-}
-.section {
-  border-top:1px solid var(--line);
-  margin-top:9px;
-  padding-top:8px;
-  display:flex;
-  flex:1;
-  min-height:0;
-  flex-direction:column
-}
-.file-label {
-  display:block;
-  padding:7px;
-  border:1px dashed #91aaa5;
-  background:#f2f8f4;
-  border-radius:3px;
-  font-size:10px;
-  font-weight:700;
-  text-align:center;
-  cursor:pointer;
-  margin-top:7px
-}
-.file-label input {
-  display:none
-}
-.drawing {
-  min-width:0;
-  min-height:0;
-  width:100%;
-  height:100%;
-  max-width:100%;
-  max-height:100%;
-  align-self:stretch;
-  justify-self:stretch;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden
-}
-.canvas-wrap {
-  position:relative;
-  flex:1;
-  min-height:0;
-  background:#fffdf8
-}
-.canvas-wrap canvas {
-  display:block;
-  width:100%;
-  height:100%
-}
-.status {
-  display:flex;
-  align-items:center;
-  min-height:28px;
-  padding:5px 10px;
-  border-top:1px solid var(--line);
-  font-size:10px;
-  color:var(--muted)
-}
-.sr-only {
-  position:absolute;
-  width:1px;
-  height:1px;
-  padding:0;
-  margin:-1px;
-  overflow:hidden;
-  clip:rect(0,0,0,0);
-  white-space:nowrap;
-  border:0
-}
-.list-wrap {
-  flex:1;
-  min-height:100px;
-  overflow:auto;
-  border:1px solid #b9c9c4;
-  border-radius:2px
-}
-.coords {
-  width:100%;
-  height:100%;
-  border-collapse:collapse;
-  table-layout:fixed;
-  font-size:10px
-}
-.coords th {
-  position:sticky;
-  top:0;
-  background:#edf5f1;
-  text-align:center;
-  color:#405961;
-  padding:5px;
-  border:1px solid #bdcdc8
-}
-.coords td {
-  text-align:center;
-  vertical-align:middle;
-  padding:1px 4px;
-  border:1px solid #d4dfda;
-  height:13px;
-  line-height:11px;
-  overflow:hidden;
-  white-space:nowrap
-}
-.coords td[contenteditable=true]:focus {
-  outline:2px solid #147c83;
-  outline-offset:-2px;
-  background:#fff
-}
-.coords td[contenteditable=false] {
-  background:#f5f7f5;
-  color:#50646a;
-  cursor:default
-}
-.coords tr.selected td {
-  background:#fff0a6
-}
-.badge {
-  border-radius:9px;
-  padding:4px 7px;
-  background:#e5f2ee;
-  color:#147c83;
-  font-size:10px;
-  font-weight:700
-}
-@media(max-width:850px) {
-  .app {
-    width:100%;
-    height:auto;
-    min-height:100vh;
-    margin:0;
-    padding:8px;
-    grid-template-rows:auto
-  }
-  .workspace {
-    grid-template-columns:1fr
-  }
-  .panel {
-    order:1;
-    overflow:auto;
-    min-height:500px
-  }
-  .actions {
-    order:2;
-    display:flex;
-    flex-direction:column;
-    align-items:stretch;
-    padding:10px;
-    gap:8px
-  }
-  .actions h2,
-  .actions #circleFields,
-  .actions #rectFields {
-    width:100%
-  }
-  .actions .grid2,.actions .shape-switch {width:100%}
-  .actions button {
-    width:100%;
-    min-height:38px
-  }
-  .drawing {
-    order:3;
-    width:100%;
-    height:auto;
-    min-height:0;
-    max-height:none;
-    aspect-ratio:6 / 4;
-    align-self:stretch;
-    justify-self:stretch
-  }
-  .list-wrap {
-    flex:1;
-    max-height:none
-  }
-}
-@media(max-width:520px) {
-  .actions .shape-switch {grid-template-columns:1fr 1fr}
-}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#147c83">
+  <title>Array</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      color: #294347;
+      background: #f8f2e8;
+      --ink: #294347;
+      --teal: #5a9eae;
+      --teal-bright: #7bb8c4;
+      --teal-deep: #397783;
+      --deep-bright: #5a9eae;
+      --leaf: #668f65;
+      --leaf-bright: #89b387;
+      --orange: #df7140;
+      --orange-bright: #ef9568;
+      --gold: #dfbd63;
+      --gold-bright: #efd681;
+      --cream: #fffaf0;
+      --line: #e5ddca;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-width: 150px;
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: #f8f2e8;
+    }
+
+    main {
+      width: min(100%, 520px);
+      transform: translateY(-118px);
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .tile {
+      min-height: 96px;
+      display: grid;
+      place-items: center;
+      padding: 14px;
+      border: 2px solid var(--tile-accent);
+      border-radius: 12px;
+      background: var(--tile-accent);
+      color: var(--tile-text);
+      font-size: clamp(21px, 3vw, 28px);
+      font-weight: 750;
+      letter-spacing: .02em;
+      text-decoration: none;
+      box-shadow: 0 5px 0 #29434712;
+      transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background-color .16s ease, color .16s ease;
+    }
+
+    .tile:first-child {
+      --tile-accent: var(--leaf);
+      --tile-bright: var(--leaf-bright);
+      --tile-text: #fffdf8;
+    }
+
+    .tile:nth-child(2) {
+      --tile-accent: var(--orange);
+      --tile-bright: var(--orange-bright);
+      --tile-text: #fffdf8;
+    }
+
+    .tile:nth-child(3) {
+      --tile-accent: var(--teal-deep);
+      --tile-bright: var(--deep-bright);
+      --tile-text: #fffdf8;
+    }
+
+    .tile:nth-child(4) {
+      --tile-accent: var(--gold);
+      --tile-bright: var(--gold-bright);
+      --tile-text: #294347;
+    }
+
+    .tile:hover,
+    .tile:focus-visible {
+      transform: translateY(-3px);
+      border-color: var(--tile-bright);
+      background: var(--tile-bright);
+      color: #294347;
+      box-shadow: 0 8px 0 #29434720;
+      outline: none;
+    }
+
+    .tile:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 0 #2943471c;
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 20px;
+      }
+
+      main {
+        transform: translateY(-100px);
+      }
+
+      .menu-grid {
+        gap: 10px;
+      }
+
+      .tile {
+        min-height: 88px;
+        padding: 10px 8px;
+        border-radius: 10px;
+      }
+    }
+  </style>
 </head>
 <body>
-<div class="app">
-<main class="workspace">
-<aside class="panel">
-<h2>Dữ liệu tọa độ</h2>
-<div class="section">
-<div class="list-wrap">
-<table class="coords">
-<thead>
-<tr>
-<th style="width:40px">STT</th>
-<th id="xHead">X (mm)</th>
-<th id="yHead">Y (mm)</th>
-<th>Pad number</th>
-<th>Pad name</th>
-</tr>
-</thead>
-<tbody id="padRows">
-</tbody>
-</table>
-</div>
-</div>
-</aside>
-<aside class="actions" aria-label="Chức năng bản vẽ">
-<h2>Chức năng</h2>
-<label class="file-label csv-color">⇧ Chọn file CSV<input id="csvFile" type="file" accept=".csv,text/csv,text/plain">
-</label>
-<div>
-<label for="unit">Đơn vị XY</label>
-<select id="unit">
-<option value="um" selected>um</option>
-<option value="mm">mm</option>
-<option value="in">inch</option>
-<option value="mil">mil</option>
-</select>
-</div>
-<div>
-<label>Kiểu hình</label>
-<div class="shape-switch" role="group" aria-label="Chọn kiểu hình">
-<button id="circleBtn" type="button" class="active" aria-pressed="true">Hình tròn</button>
-<button id="rectBtn" type="button" aria-pressed="false">Hình vuông</button>
-</div>
-<select id="shapeType" class="sr-only" aria-hidden="true" tabindex="-1">
-<option value="circle">Hình tròn</option>
-<option value="rect">Hình vuông</option>
-</select>
- </div>
-<div id="circleFields">
-<label id="diameterLabel" for="diameter">Đường kính (mm)</label>
-<input id="diameter" type="number" value="50" min="0.001" step="any">
-</div>
-<div id="rectFields" hidden>
-<div>
-<label id="widthLabel" for="width">Chiều dài (mm)</label>
-<input id="width" type="number" value="50" min="0.001" step="any">
-</div>
-<div>
-<label id="heightLabel" for="height">Chiều rộng (mm)</label>
-<input id="height" type="number" value="50" min="0.001" step="any">
-</div>
-</div>
-<button id="centerBtn" class="center-color" aria-pressed="false">Đưa tọa độ về center</button>
-<button id="hideLabelsBtn" class="copy-cad-color" type="button" aria-pressed="false">Ẩn name và number</button>
-<button id="fitBtn" class="soft">Vừa khung</button>
-<button id="exportBtn" class="dxf-color">Xuất DXF</button>
-<button id="copyCadBtn" class="copy-cad-color" type="button" aria-pressed="false">Copy CAD</button>
-<button id="clearBtn" class="orange">Xóa hết</button>
-</aside>
-<section class="drawing">
-<div class="canvas-wrap">
-<canvas id="canvas" aria-label="Bản vẽ tọa độ pads">
-</canvas>
-</div>
-<div class="status">
-<span id="count">0 pad</span>
-<span id="status" class="sr-only" aria-live="polite">Sẵn sàng.</span>
-</div>
-</section>
-</main>
-</div>
-<script>
-(()=>{'use strict';
-const $=id=>document.getElementById(id),canvas=$('canvas'),ctx=canvas.getContext('2d');
-let pads=[],scale=1,viewPan={x:0,y:0},dragState=null,selectedPadIndex=-1,sheetLocked=false,centerSnapshot=null;
-let copyCadMode=false,selectionRect=null,selectedPads=new Set(),hidePadLabels=false;
-const unit=()=>$('unit').value,shape=()=>$('shapeType').value;
-const clean=v=>String(v??'').replace(/\u00a0/g,' ').trim();
-// Chuyển chuỗi → số. Hỗ trợ dấu phẩy thập phân (12,35). Chuỗi rỗng → NaN.
-const toNum=v=>{if(typeof v==='number')return v;let s=clean(v).replace(/\s/g,'');if(!s)return NaN;if(/^[-+]?\d+,\d+$/.test(s))s=s.replace(',','.');return Number(s)};
-
-function bounds(){if(!pads.length)return{x0:-5,y0:-5,x1:5,y1:5};let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;for(const p of pads){const rx=(p.type==='circle'?p.d:p.w)/2,ry=(p.type==='circle'?p.d:p.h)/2;x0=Math.min(x0,p.x-rx);y0=Math.min(y0,p.y-ry);x1=Math.max(x1,p.x+rx);y1=Math.max(y1,p.y+ry)}return{x0,y0,x1,y1}}
-function resize(){const r=canvas.getBoundingClientRect(),dpr=devicePixelRatio||1;canvas.width=Math.max(1,Math.round(r.width*dpr));canvas.height=Math.max(1,Math.round(r.height*dpr));ctx.setTransform(dpr,0,0,dpr,0,0);draw()}
-function draw(){const r=canvas.getBoundingClientRect(),w=r.width,h=r.height;ctx.clearRect(0,0,w,h);
-const b=bounds(),m=42,aw=w-m*2,ah=h-m*2,sx=Math.max(b.x1-b.x0,1e-9),sy=Math.max(b.y1-b.y0,1e-9);
-if(scale===1)scale=Math.max(.001,Math.min(aw/sx,ah/sy,100));
-const s=scale,ox=m+(aw-sx*s)/2+viewPan.x,oy=m+(ah-sy*s)/2+viewPan.y,map=(x,y)=>({x:ox+(x-b.x0)*s,y:oy+(b.y1-y)*s});
-// dấu + tại gốc (0,0) thật
-const o=map(0,0);ctx.strokeStyle='#e53935';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(o.x-7,o.y);ctx.lineTo(o.x+7,o.y);ctx.moveTo(o.x,o.y-7);ctx.lineTo(o.x,o.y+7);ctx.stroke();
-for(let i=0;i<pads.length;i++){const p=pads[i],q=map(p.x,p.y),rw=(p.type==='circle'?p.d:p.w)*s,rh=(p.type==='circle'?p.d:p.h)*s;
-const isSelected=selectedPads.has(i);ctx.save();ctx.strokeStyle=isSelected?'#df3f45':p.color;ctx.fillStyle=isSelected?'#df3f4522':p.color+'18';ctx.lineWidth=isSelected?2:Math.max(.7,p.lineWidth);ctx.beginPath();
-if(p.type==='circle')ctx.ellipse(q.x,q.y,rw/2,rh/2,0,0,Math.PI*2);else ctx.rect(q.x-rw/2,q.y-rh/2,rw,rh);
-ctx.fill();ctx.stroke();
-// Pad number (trên) + Pad name (dưới) nằm trong hình, tự co theo zoom và độ dài chữ
-const num=String(p.number??''),nm=String(p.name??'');
-if(!hidePadLabels&&(num||nm)){const circ=p.type==='circle',aw=rw*(circ?.74:.9),ah=rh*(circ?.74:.9),FT='px Segoe UI,Arial';
-ctx.font='600 100'+FT;const wmax=Math.max(ctx.measureText(num).width,ctx.measureText(nm).width,1);
-const f=Math.min(ah/2.3,aw*100/wmax);
-if(f>=3){ctx.font='600 '+f+FT;ctx.fillStyle='#18313a';ctx.textAlign='center';ctx.textBaseline='middle';const gap=f*.6;if(num)ctx.fillText(num,q.x,q.y-gap);if(nm)ctx.fillText(nm,q.x,q.y+gap)}}
-ctx.restore()}
-if(selectionRect){const x=Math.min(selectionRect.x1,selectionRect.x2),y=Math.min(selectionRect.y1,selectionRect.y2),rw=Math.abs(selectionRect.x2-selectionRect.x1),rh=Math.abs(selectionRect.y2-selectionRect.y1);ctx.save();ctx.fillStyle='#df3f451a';ctx.strokeStyle='#df3f45';ctx.lineWidth=1.5;ctx.setLineDash([6,4]);ctx.fillRect(x,y,rw,rh);ctx.strokeRect(x,y,rw,rh);ctx.restore()}}
-
-function setStatus(s){$('status').textContent=s}
-function refit(){scale=1;viewPan={x:0,y:0}}
-function resetCenterToggle(){centerSnapshot=null;$('centerBtn').classList.remove('active');$('centerBtn').setAttribute('aria-pressed','false')}
-
-function padAt(clientX,clientY){
-const r=canvas.getBoundingClientRect(),px=clientX-r.left,py=clientY-r.top,w=r.width,h=r.height;
-const b=bounds(),m=42,aw=w-m*2,ah=h-m*2,sx=Math.max(b.x1-b.x0,1e-9),sy=Math.max(b.y1-b.y0,1e-9);
-const s=scale===1?Math.max(.001,Math.min(aw/sx,ah/sy,100)):scale;
-const ox=m+(aw-sx*s)/2+viewPan.x,oy=m+(ah-sy*s)/2+viewPan.y;
-for(let i=pads.length-1;i>=0;i--){const p=pads[i],rw=(p.type==='circle'?p.d:p.w)*s,rh=(p.type==='circle'?p.d:p.h)*s;
-const cx=ox+(p.x-b.x0)*s,cy=oy+(b.y1-p.y)*s,dx=px-cx,dy=py-cy;
-if(p.type==='circle'?(dx*dx/(rw*rw/4)+dy*dy/(rh*rh/4)<=1):(Math.abs(dx)<=rw/2&&Math.abs(dy)<=rh/2))return i;
-}
-return -1;
-}
-
-function canvasPointForPad(p){
-const r=canvas.getBoundingClientRect(),w=r.width,h=r.height,m=42,aw=w-m*2,ah=h-m*2,b=bounds();
-const sx=Math.max(b.x1-b.x0,1e-9),sy=Math.max(b.y1-b.y0,1e-9),s=scale===1?Math.max(.001,Math.min(aw/sx,ah/sy,100)):scale;
-const ox=m+(aw-sx*s)/2+viewPan.x,oy=m+(ah-sy*s)/2+viewPan.y;
-return{x:ox+(p.x-b.x0)*s,y:oy+(b.y1-p.y)*s,w:(p.type==='circle'?p.d:p.w)*s,h:(p.type==='circle'?p.d:p.h)*s};
-}
-
-function revealSelectedRow(){
-const wrap=document.querySelector('.list-wrap'),row=$('padRows').querySelector('tr.selected');
-if(!wrap||!row)return;
-const wrapRect=wrap.getBoundingClientRect(),rowRect=row.getBoundingClientRect();
-const headerHeight=wrap.querySelector('thead')?.getBoundingClientRect().height??0;
-const visibleTop=wrapRect.top+headerHeight,visibleBottom=wrapRect.bottom;
-if(rowRect.top<visibleTop)wrap.scrollBy({top:rowRect.top-visibleTop,behavior:'smooth'});
-else if(rowRect.bottom>visibleBottom)wrap.scrollBy({top:rowRect.bottom-visibleBottom,behavior:'smooth'});
-}
-
-function update(){const body=$('padRows');body.replaceChildren();
-const makeCell=(tr,k,v,onchange)=>{const td=document.createElement('td');td.contentEditable=String(!sheetLocked);td.setAttribute('role','textbox');td.setAttribute('aria-readonly',String(sheetLocked));td.setAttribute('aria-label',k);td.dataset.field=k;td.title=sheetLocked?'Bảng đã khóa sau khi dán hoặc nhập CSV':'Có thể dán vùng Excel bắt đầu từ ô này';td.textContent=v??'';td.onblur=()=>{if(!sheetLocked)onchange(td)};tr.append(td);return td};
-const wrap=document.querySelector('.list-wrap');
-const headerHeight=wrap?.querySelector('thead')?.getBoundingClientRect().height??0;
-const visibleRows=Math.ceil(Math.max(0,(wrap?.clientHeight??0)-headerHeight)/15);
-const rowCount=Math.max(visibleRows,pads.length+4,14);
-for(let i=0;i<rowCount;i++){const p=pads[i],tr=document.createElement('tr'),no=document.createElement('td');no.textContent=String(i+1);tr.classList.toggle('selected',i===selectedPadIndex);
-tr.append(no);
-if(p){[['x',p.x],['y',p.y],['number',p.number],['name',p.name]].forEach(([k,v])=>makeCell(tr,k,v,td=>{const value=td.textContent.trim();
-if(k==='x'||k==='y'){const n=toNum(value);if(!Number.isFinite(n)){td.textContent=String(p[k]);setStatus('Tọa độ X/Y phải là số.',true);return}p[k]=n;resetCenterToggle();refit()}else p[k]=value;draw()}))}
-else{const f={};['x','y','number','name'].forEach(k=>f[k]=makeCell(tr,k,'',()=>{if(f.x.textContent.trim()===''||f.y.textContent.trim()==='')return;
-if(i!==pads.length){setStatus('Nhập vào dòng trống kế tiếp hoặc dán cả vùng từ Excel.',true);return}
-if(addPad({x:f.x.textContent,y:f.y.textContent,number:f.number.textContent,name:f.name.textContent})){refit();update();setStatus('Đã thêm tọa độ vào bảng.')}else setStatus('X/Y phải là số.',true)}))}
-body.append(tr)}
-$('count').textContent=pads.length+' pad';
- $('xHead').textContent='X ('+unit()+')';$('yHead').textContent='Y ('+unit()+')';$('diameterLabel').textContent='Đường kính ('+unit()+')';$('widthLabel').textContent='Chiều dài ('+unit()+')';$('heightLabel').textContent='Chiều rộng ('+unit()+')';draw()}
-
-function addPad(raw){const base={type:shape(),color:'#147c83',lineWidth:1.5,name:String(raw.name??'').trim(),number:String(raw.number??'').trim(),x:toNum(raw.x),y:toNum(raw.y)};
-if(base.type==='circle')base.d=Number($('diameter').value);else{base.w=Number($('width').value);base.h=Number($('height').value)}
-if(!Number.isFinite(base.x)||!Number.isFinite(base.y))return false;
-if(base.type==='circle'&&!(base.d>0))return false;if(base.type==='rect'&&!(base.w>0&&base.h>0))return false;
-resetCenterToggle();pads.push(base);return true}
-
-// ===== DÁN TỪ EXCEL / GOOGLE SHEETS =====
-function pasteGrid(e){
- const cell=e.target?.closest?.('td'),row=cell?.closest('tr');
- if(!cell||!row||!cell.closest('#padRows'))return;
- if(sheetLocked){e.preventDefault();setStatus('Bảng tọa độ đã khóa. Bấm Xóa hết nếu muốn nhập dữ liệu mới.',true);return}
- const raw=e.clipboardData?.getData('text/plain')||'',html=e.clipboardData?.getData('text/html')||'';
- let sourceRows=[];
- const normalized=raw.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n').replace(/\n+$/,'');
- if(normalized.trim()){
-  if(normalized.includes('\t')){sourceRows=normalized.split('\n').map(l=>l.split('\t').map(clean))}
-  else sourceRows=normalized.split('\n').map(line=>{
-   const text=clean(line);if(!text)return[];
-   const labeled=[...text.matchAll(/\b([XY])\s*[:=]\s*(-?\d+(?:[.,]\d+)?)/gi)];
-   if(labeled.length>=2){const xy={};labeled.forEach(m=>xy[m[1].toLowerCase()]=m[2]);return[xy.x,xy.y]}
-   const pair=text.match(/^\s*[([]?\s*(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)\s*[)\]]?\s*$/);
-   if(pair)return[pair[1],pair[2]];
-   if(text.includes(';'))return text.split(';').map(clean);
-   if(text.includes(','))return text.split(',').map(clean);
-   const tok=text.split(/\s+/);return tok.every(t=>Number.isFinite(toNum(t)))?tok:[text]; // "VDD core" vẫn là 1 ô
-  });
- }
- if(!sourceRows.length&&html){
-  const doc=new DOMParser().parseFromString(html,'text/html');
-  sourceRows=[...doc.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(td=>clean(td.textContent)));
- }
- sourceRows=sourceRows.filter(r=>r.length&&r.some(v=>clean(v)!==''));
- if(!sourceRows.length)return;
- // Dán 1 giá trị đơn vào 1 ô → để trình duyệt xử lý bình thường
- if(sourceRows.length===1&&sourceRows[0].length===1)return;
- e.preventDefault();
-
- const norm=s=>clean(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/[^a-z0-9]/g,'');
- const first=sourceRows[0].map(norm);
- // So khớp chính xác (cho phép hậu tố đơn vị: "X (mm)" → xmm)
- const findHeader=bases=>first.findIndex(v=>bases.some(b=>v===b||new RegExp('^'+b+'(mm|um|cm|m|in|inch)$').test(v)));
- const hx=findHeader(['x','coordx','xcoord','xcoordinate','toadox']),hy=findHeader(['y','coordy','ycoord','ycoordinate','toadoy']);
- const keys=['x','y','number','name'];
- let rows=sourceRows,columnMap=null;
- if(hx>=0&&hy>=0){columnMap={x:hx,y:hy,number:findHeader(['padnumber','number','padno','padnum','pinno','pinnumber']),name:findHeader(['padname','name','pinname'])};rows=sourceRows.slice(1)}
- else{
-  const explicitIndex=['stt','index','sequence','row'].includes(first[0]||'');
-  const numericIndex=sourceRows.length>1&&sourceRows.every((r,i)=>r.length>=5&&/^\d+$/.test(clean(r[0]))&&Number(clean(r[0]))===Number(clean(sourceRows[0][0]))+i);
-  if(explicitIndex||numericIndex)rows=sourceRows.map(r=>r.slice(1));
- }
- let startCol=cell.dataset?.field?keys.indexOf(cell.dataset.field):0;if(startCol<0)startCol=0;
- let target=Array.prototype.indexOf.call(row.parentElement.rows,row);if(target>pads.length)target=pads.length;
- let added=0,updated=0,skipped=0;
- for(const values of rows){
-  if(!values.some(v=>clean(v)!==''))continue;
-  const vals={};
-  if(columnMap){for(const k of keys){const at=columnMap[k];if(at>=0&&values[at]!==undefined)vals[k]=clean(values[at])}}
-  else values.forEach((v,ci)=>{const k=keys[startCol+ci];if(k)vals[k]=clean(v)});
-  const hasX=vals.x!==undefined&&vals.x!=='',hasY=vals.y!==undefined&&vals.y!=='';
-  const x=hasX?toNum(vals.x):undefined,y=hasY?toNum(vals.y):undefined;
-  if(target<pads.length){ // cập nhật dòng có sẵn: chỉ ghi các cột có trong dữ liệu dán
-   const p=pads[target];
-   if((hasX&&!Number.isFinite(x))||(hasY&&!Number.isFinite(y))){skipped++;continue}
-   if(hasX)p.x=x;if(hasY)p.y=y;
-   if(vals.number!==undefined)p.number=vals.number;if(vals.name!==undefined)p.name=vals.name;
-   updated++;target++;
-  }else{
-   if(!Number.isFinite(x)||!Number.isFinite(y)||!addPad({x,y,number:vals.number||'',name:vals.name||''})){skipped++;continue}
-   added++;target++;
-  }
- }
- if(added||updated){sheetLocked=true;resetCenterToggle()}
- refit();update();
- if(added||updated){let msg='Đã dán '+(added+updated)+' dòng (thêm '+added+', cập nhật '+updated+')';if(skipped)msg+='; bỏ qua '+skipped+' dòng không hợp lệ';setStatus(msg+'.',skipped>0)}
- else setStatus('Không dán được tọa độ. Hãy copy 4 cột X, Y, Pad number, Pad name rồi dán vào ô X của dòng trống đầu tiên.',true);
-}
-document.addEventListener('paste',pasteGrid,true);
-
-function applyShapeOptions(convertAll=false){
- const type=shape();
- const diameter=toNum($('diameter').value);
- const width=toNum($('width').value);
- const height=toNum($('height').value);
- const valid=type==='circle'?diameter>0:width>0&&height>0;
- if(!valid){setStatus('Kích thước phải lớn hơn 0.',true);return}
- let changed=0;
- for(const pad of pads){
-  if(convertAll)pad.type=type;
-  if(pad.type!==type)continue;
-  if(type==='circle')pad.d=diameter;
-  else{pad.w=width;pad.h=height}
-  changed++;
- }
- refit();
- draw();
- if(changed)setStatus('Đã áp dụng kích thước mới cho '+changed+' tọa độ.');
-}
-
-$('shapeType').onchange=()=>{
- $('circleFields').hidden=shape()==='rect';
- $('rectFields').hidden=shape()==='circle';
- $('circleBtn').classList.toggle('active',shape()==='circle');
- $('rectBtn').classList.toggle('active',shape()==='rect');
- $('circleBtn').setAttribute('aria-pressed',String(shape()==='circle'));
- $('rectBtn').setAttribute('aria-pressed',String(shape()==='rect'));
- applyShapeOptions(true);
-};
-$('circleBtn').onclick=()=>{$('shapeType').value='circle';$('shapeType').dispatchEvent(new Event('change'))};
-$('rectBtn').onclick=()=>{$('shapeType').value='rect';$('shapeType').dispatchEvent(new Event('change'))};
-
-['diameter','width','height'].forEach(id=>{
- $(id).addEventListener('input',()=>applyShapeOptions(false));
-});
-
-// ===== CSV =====
-function parseRows(text){
- const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(x=>x.trim());if(!lines.length)return[];
- const sep=[';','\t',','].map(c=>[c,lines[0].split(c).length]).sort((a,b)=>b[1]-a[1])[0][0];
- const split=line=>{if(sep!==',')return line.split(sep).map(v=>v.trim().replace(/^"|"$/g,''));
-  return(line.match(/("(?:[^"]|"")*"|[^,]*)(,|$)/g)||[]).filter(x=>x&&x!==',').map(x=>x.replace(/,$/,'').replace(/^"|"$/g,'').replace(/""/g,'"').trim())};
- const n=s=>clean(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/[^a-z0-9]/g,'');
- const first=split(lines[0]).map(n);
- const fh=bases=>first.findIndex(v=>bases.some(b=>v===b||new RegExp('^'+b+'(mm|um|cm|m|in|inch)$').test(v)));
- const hasHeader=fh(['x','coordx','xcoord','xcoordinate','toadox'])>=0&&fh(['y','coordy','ycoord','ycoordinate','toadoy'])>=0;
- let ix={x:0,y:1,number:2,name:3}; // cùng thứ tự với bảng: X, Y, Pad number, Pad name
- if(hasHeader)ix={x:fh(['x','coordx','xcoord','xcoordinate','toadox']),y:fh(['y','coordy','ycoord','ycoordinate','toadoy']),name:fh(['padname','name','pinname','tenpad']),number:fh(['padnumber','number','padno','padnum','pinno','sopad'])};
- return lines.slice(hasHeader?1:0).map(line=>{const a=split(line);return{x:toNum(a[ix.x]),y:toNum(a[ix.y]),number:ix.number>=0?a[ix.number]||'':'',name:ix.name>=0?a[ix.name]||'':''}}).filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y))}
-function importText(t){if(sheetLocked){setStatus('Bảng tọa độ đã khóa. Bấm Xóa hết trước khi nhập CSV mới.',true);return}const arr=parseRows(t);if(!arr.length){setStatus('Không đọc được dòng tọa độ nào trong CSV.',true);return}let added=0;arr.forEach(p=>{if(addPad(p))added++});if(added)sheetLocked=true;refit();update();setStatus('Đã nhập '+added+'/'+arr.length+' tọa độ từ CSV.')}
-$('csvFile').onchange=async e=>{const f=e.target.files[0];if(f)importText(await f.text());e.target.value=''};
-
-$('clearBtn').onclick=()=>{pads=[];sheetLocked=false;selectedPadIndex=-1;selectedPads.clear();resetCenterToggle();refit();update();setStatus('Đã xóa toàn bộ tọa độ.')};
-$('unit').onchange=()=>update();
-$('fitBtn').onclick=()=>{refit();draw()};
-$('centerBtn').onclick=()=>{
- if(!pads.length){setStatus('Chưa có tọa độ để đưa về center.');return}
- if(centerSnapshot){
-  centerSnapshot.forEach((point,i)=>{pads[i].x=point.x;pads[i].y=point.y});
-  resetCenterToggle();refit();update();setStatus('Đã khôi phục tọa độ ban đầu.');return
- }
- const b=bounds(),cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2;
- centerSnapshot=pads.map(p=>({x:p.x,y:p.y}));
- for(const p of pads){p.x-=cx;p.y-=cy}
- refit();update();$('centerBtn').classList.add('active');$('centerBtn').setAttribute('aria-pressed','true');setStatus('Đã đưa tâm vùng tọa độ về (0, 0).')
-};
-
-// ===== XUẤT DXF =====
-$('exportBtn').onclick=async()=>{
- if(!pads.length){setStatus('Chưa có tọa độ để xuất DXF.',true);return}
- const exportingSelection=selectedPads.size>0;
- const all=(exportingSelection?[...selectedPads].sort((a,b)=>a-b).map(i=>pads[i]):pads).map(p=>({...p}));
- const mmPerUnit={um:0.001,mm:1,in:25.4,mil:0.0254}[unit()]||1;
- let out='';const pair=(c,v)=>{out+=c+'\n'+v+'\n'};
- // DXF geometry is normalized to millimeters so CAD importers using mm defaults preserve physical size.
- pair(0,'SECTION');pair(2,'HEADER');pair(9,'$INSUNITS');pair(70,4);pair(0,'ENDSEC');
- pair(0,'SECTION');pair(2,'ENTITIES');
- for(const p of all){
-  const x=p.x*mmPerUnit,y=p.y*mmPerUnit;
-  const padW=(p.type==='circle'?p.d:p.w)*mmPerUnit,padH=(p.type==='circle'?p.d:p.h)*mmPerUnit;
-  if(p.type==='circle'){pair(0,'CIRCLE');pair(8,'PADS');pair(10,x);pair(20,y);pair(30,0);pair(40,p.d*mmPerUnit/2)}
-  else{const x0=x-padW/2,x1=x+padW/2,y0=y-padH/2,y1=y+padH/2;
-   [[x0,y0,x1,y0],[x1,y0,x1,y1],[x1,y1,x0,y1],[x0,y1,x0,y0]].forEach(([a,b2,c,d])=>{pair(0,'LINE');pair(8,'PADS');pair(10,a);pair(20,b2);pair(30,0);pair(11,c);pair(21,d);pair(31,0)})}
-  if(!hidePadLabels){const labels=[String(p.number??''),String(p.name??'')],longest=Math.max(...labels.map(s=>s.length),1);
-   const textHeight=Math.min(padH*.28,padW*.72/(longest*.65));
-   labels.forEach((label,i)=>{if(!label)return;const labelY=y+(i===0?textHeight*.55:-textHeight*.55);pair(0,'TEXT');pair(8,'PAD_LABELS');pair(10,x);pair(20,labelY);pair(30,0);pair(40,textHeight);pair(1,label);pair(7,'STANDARD');pair(72,1);pair(73,2);pair(11,x);pair(21,labelY);pair(31,0)})}
- }
- pair(0,'ENDSEC');pair(0,'EOF');
- const blob=new Blob([out],{type:'application/dxf'}),filename=exportingSelection?'padplot-selected-'+unit()+'.dxf':'padplot-'+unit()+'.dxf';
- if(window.showSaveFilePicker){
-  try{
-   const handle=await window.showSaveFilePicker({suggestedName:filename,types:[{description:'DXF drawing',accept:{'application/dxf':['.dxf']}}]});
-   const writable=await handle.createWritable();await writable.write(blob);await writable.close();
-   setStatus('Đã lưu '+(exportingSelection?'DXF gồm '+all.length+' pad đã chọn: ':'DXF: ')+handle.name+' (đã quy đổi từ '+unit()+' sang mm, giữ nguyên kích thước vật lý).');return
-  }catch(error){
-   if(error.name==='AbortError'){setStatus('Đã hủy lưu DXF.');return}
-   setStatus('Không mở được hộp thoại lưu DXF: '+error.message,true);return
-  }
- }
- const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
- setStatus('Đã tải '+(exportingSelection?'DXF gồm '+all.length+' pad đã chọn.':'DXF')+' đã quy đổi từ '+unit()+' sang mm, giữ nguyên kích thước vật lý.')};
-
-function setCopyCadMode(enabled){copyCadMode=enabled;$('copyCadBtn').classList.toggle('active',enabled);$('copyCadBtn').setAttribute('aria-pressed',String(enabled));canvas.style.cursor=enabled?'crosshair':'grab';if(!enabled)selectionRect=null;draw();if(enabled)setStatus('Copy CAD đang bật: kéo chuột trái để quét chọn các pad. Bấm lại để tắt; Xuất DXF sẽ lưu vùng đã chọn.')}
-$('copyCadBtn').onclick=()=>setCopyCadMode(!copyCadMode);
-$('hideLabelsBtn').onclick=()=>{hidePadLabels=!hidePadLabels;$('hideLabelsBtn').classList.toggle('active',hidePadLabels);$('hideLabelsBtn').setAttribute('aria-pressed',String(hidePadLabels));draw();setStatus(hidePadLabels?'Đã ẩn pad name và pad number trên CAD. Xuất DXF sẽ chỉ gồm hình pad.':'Đã hiện lại pad name và pad number trên CAD.')};
-
-canvas.style.cursor='grab';
-canvas.style.touchAction='none';
-canvas.addEventListener('pointerdown',e=>{
-  if(e.button!==0)return;
-  if(copyCadMode){const r=canvas.getBoundingClientRect();dragState={type:'select',startX:e.clientX,startY:e.clientY,moved:false};selectionRect={x1:e.clientX-r.left,y1:e.clientY-r.top,x2:e.clientX-r.left,y2:e.clientY-r.top};canvas.setPointerCapture(e.pointerId);draw();return}
-  dragState={type:'pan',x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false};
-  canvas.setPointerCapture(e.pointerId);
-  canvas.style.cursor='grabbing';
-});
-canvas.addEventListener('pointermove',e=>{
-  if(!dragState)return;
-  if(Math.hypot(e.clientX-dragState.startX,e.clientY-dragState.startY)>3)dragState.moved=true;
-  if(dragState.type==='select'){const r=canvas.getBoundingClientRect();selectionRect.x2=e.clientX-r.left;selectionRect.y2=e.clientY-r.top;draw();return}
-  viewPan.x+=e.clientX-dragState.x;
-  viewPan.y+=e.clientY-dragState.y;
-  dragState={x:e.clientX,y:e.clientY};
-  draw();
-});
-function endPan(e){if(!dragState)return;const finished=dragState,wasClick=!finished.moved;dragState=null;canvas.style.cursor=copyCadMode?'crosshair':'grab';if(e.type==='pointerup'&&finished.type==='select'){
-  if(wasClick){selectedPads.clear();const hit=padAt(e.clientX,e.clientY);if(hit>=0)selectedPads.add(hit)}
-  else{const x0=Math.min(selectionRect.x1,selectionRect.x2),x1=Math.max(selectionRect.x1,selectionRect.x2),y0=Math.min(selectionRect.y1,selectionRect.y2),y1=Math.max(selectionRect.y1,selectionRect.y2),windowSelect=selectionRect.x2>=selectionRect.x1;selectedPads.clear();for(let i=0;i<pads.length;i++){const q=canvasPointForPad(pads[i]),px0=q.x-q.w/2,px1=q.x+q.w/2,py0=q.y-q.h/2,py1=q.y+q.h/2;const hit=windowSelect?(px0>=x0&&px1<=x1&&py0>=y0&&py1<=y1):(px1>=x0&&px0<=x1&&py1>=y0&&py0<=y1);if(hit)selectedPads.add(i)}}
-  selectionRect=null;draw();setStatus(selectedPads.size+' pad đã chọn. Bấm Xuất DXF để lưu riêng vùng chọn, rồi mở DXF trong SolidWorks dưới dạng sketch.');return
-}if(wasClick&&e.type==='pointerup'){selectedPadIndex=padAt(e.clientX,e.clientY);update();revealSelectedRow()}}
-canvas.addEventListener('pointerup',endPan);
-canvas.addEventListener('pointercancel',endPan);
-canvas.addEventListener('lostpointercapture',endPan);
-canvas.addEventListener('wheel',e=>{
- e.preventDefault();
- const rect=canvas.getBoundingClientRect(),w=rect.width,h=rect.height,m=42,aw=w-m*2,ah=h-m*2,b=bounds();
- const sx=Math.max(b.x1-b.x0,1e-9),sy=Math.max(b.y1-b.y0,1e-9);
- const oldScale=scale===1?Math.max(.001,Math.min(aw/sx,ah/sy,100)):scale;
- const delta=e.deltaMode===1?e.deltaY*16:e.deltaMode===2?e.deltaY*h:e.deltaY;
- const factor=Math.exp(-delta*.00035),newScale=Math.max(.001,Math.min(1000,oldScale*factor));
- const ratio=newScale/oldScale,cx=m+aw/2,cy=m+ah/2,pointerX=e.clientX-rect.left,pointerY=e.clientY-rect.top;
- viewPan.x=pointerX-cx-(pointerX-cx-viewPan.x)*ratio;
- viewPan.y=pointerY-cy-(pointerY-cy-viewPan.y)*ratio;
- scale=Math.abs(newScale-1)<1e-9?1.0001:newScale;draw()
-},{passive:false});
-new ResizeObserver(resize).observe(canvas.parentElement);
-new ResizeObserver(()=>update()).observe(document.querySelector('.list-wrap'));
-update();resize();
-})();
-</script>
+  <main aria-label="PadPlot modules">
+    <nav class="menu-grid" aria-label="Chọn chức năng">
+      <a class="tile" href="array.html">Array</a>
+      <a class="tile" href="dut.html">Dut</a>
+      <div class="tile">Compare</div>
+      <div class="tile">Offset</div>
+    </nav>
+  </main>
 </body>
 </html>
