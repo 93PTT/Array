@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f8f2e8">
+<title>Compare</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+:root {
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  color:#18313a;
+  background:#f8f2e8;
+  font-synthesis:none;
+  --ink:#18313a;
+  --muted:#75868a;
+  --line:#dce3df;
+  --teal:#147c83;
+  --cream:#fffdf8;
+}
+* {box-sizing:border-box}
+body {margin:0;min-width:1000px;min-height:100vh;background:#f8f2e8}
+.app {
+  width:calc(100vw - 32px);
+  height:calc(100vh - 32px);
+  min-height:500px;
+  margin:16px auto;
+  padding:10px;
+  display:grid;
+  grid-template-columns:minmax(190px,.72fr) minmax(190px,.72fr) 230px minmax(0,1.65fr);
+  grid-template-rows:minmax(0,1fr);
+  gap:9px;
+}
+.panel,.actions {
+  min-width:0;
+  min-height:0;
+  background:var(--cream);
+  border:2px solid var(--ink);
+  border-radius:10px;
+}
+.panel {padding:11px;overflow:hidden;display:flex;flex-direction:column}
+.actions {padding:12px;display:flex;flex-direction:column;gap:7px;overflow:hidden}
+.input-section {flex:0 0 auto;min-height:0;overflow:visible;padding-right:0}
+.input-section > h3 {margin:0 0 5px;font-size:12px}
+.output-heading h3 {margin:0;font-size:12px}
+.output-section {flex:0 0 auto;min-height:0;display:flex;flex-direction:column;border-top:1px solid var(--line);padding-top:7px}
+.panel-heading {display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;min-height:25px}
+.output-heading {display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:3px}
+.tolerance-controls {display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:0}
+.tolerance-controls label {margin:0 0 2px}
+h1,h2 {font-size:14px;margin:0}
+.badge {border-radius:9px;padding:4px 7px;background:#e5f2ee;color:#147c83;font-size:10px;font-weight:700;white-space:nowrap}
+.table-wrap {flex:1;min-height:0;overflow:auto;border:1px solid #b9c9c4;border-radius:2px}
+.output-section .table-wrap {flex:0 0 auto;min-height:0;overflow:hidden}
+table {width:100%;height:100%;border-collapse:collapse;table-layout:fixed;font-size:10px}
+th {position:sticky;top:0;z-index:1;background:#edf5f1;text-align:center;color:#405961;padding:5px 3px;border:1px solid #bdcdc8}
+td {text-align:center;vertical-align:middle;padding:1px 4px;border:1px solid #d4dfda;height:15px;line-height:12px;overflow:hidden;white-space:nowrap}
+td[contenteditable=true]:focus {outline:2px solid var(--teal);outline-offset:-2px;background:#f5fffc}
+td.index {background:#f5f7f5;color:#607176;user-select:none}
+td[contenteditable=false] {background:#f5f7f5;color:#50646a}
+tbody tr.selected td {background:#fff0a6}
+.actions h2 {margin:0 0 2px}
+.function-group {display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);align-items:end;gap:4px 7px;padding:5px 0;border-top:1px solid var(--line)}
+.function-group h3 {margin:0;font-size:12px}
+.function-group > h3,.function-group > .file-label,.function-group > .tolerance-controls {grid-column:1/-1}
+.file-label {display:block;padding:5px;border:1px dashed #91aaa5;border-radius:3px;background:#e4f3e9;color:#286b46;font-size:10px;font-weight:700;text-align:center;cursor:pointer}
+.file-label input {display:none}
+label {display:block;margin:2px 0;color:#405961;font-size:10px;font-weight:700}
+label[for^="diameter"] {font-size:10px;letter-spacing:-.1px;white-space:nowrap}
+input,select {width:100%;height:24px;border:1px solid #cbd6d3;border-radius:3px;padding:3px 6px;font:inherit;font-size:10px;color:var(--ink);background:#fff;outline:none}
+input:focus,select:focus {border-color:#147c83;box-shadow:0 0 0 2px #147c8318}
+.legend-dot {display:inline-block;width:8px;height:8px;margin-right:4px;border-radius:50%;vertical-align:middle}
+.excel1-color {background:#147c83}
+.excel2-color {background:#f1763b}
+.drawing-head {display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;min-height:25px}
+.cad-head-right {display:flex;align-items:center;gap:7px}
+.fit-button,.home-link {border:1px solid var(--ink);border-radius:3px;padding:5px 8px;background:#e3f1ee;color:var(--ink);font:inherit;font-size:10px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap}
+.fit-button:hover {background:#cfe7e1;box-shadow:2px 2px 0 var(--ink)}
+.home-link:hover {background:#cfe7e1;box-shadow:2px 2px 0 var(--ink)}
+.compare-button {width:100%;min-height:40px;border:1px solid #c65b2b;border-radius:4px;padding:8px 10px;background:#f1763b;color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
+.compare-button:hover {background:#df642f}
+.compare-button.active {background:#df3f45;border-color:#b62e34;color:#fff}
+.cad-area {flex:1;min-height:0;position:relative;overflow:hidden;border:1px solid #d8e1dc;background:#fffdf8}
+.cad-panel {width:auto;height:100%;aspect-ratio:auto;justify-self:stretch;align-self:stretch}
+canvas {display:block;width:100%;height:100%;cursor:grab;touch-action:none}
+canvas.dragging {cursor:grabbing}
+.offset-table {flex:none;height:auto}
+.offset-table td.output-value {height:27px;background:#fff;color:#18313a;font-weight:600}
+.cad-cross {position:absolute;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);pointer-events:none}
+.cad-cross::before,.cad-cross::after {content:"";position:absolute;background:#df3f45}
+.cad-cross::before {width:18px;height:2px;left:0;top:8px}
+.cad-cross::after {width:2px;height:18px;left:8px;top:0}
+@media(max-width:1200px) {
+  body {min-width:640px}
+  .app {height:auto;min-height:calc(100vh - 20px);margin:10px auto;grid-template-columns:minmax(210px,1fr) minmax(210px,1fr);grid-template-rows:minmax(420px,1fr) minmax(420px,1fr)}
+  .actions {grid-column:1;grid-row:2}
+  .cad-panel {grid-column:2;grid-row:2;width:auto;height:100%;aspect-ratio:auto}
+}
+@media(max-width:680px) {
+  body {min-width:340px}
+  .app {width:calc(100vw - 16px);padding:6px;grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(4,minmax(340px,auto));gap:8px}
+  .actions,.cad-panel {grid-column:1;grid-row:auto}
+  .cad-panel {width:100%;height:100%;aspect-ratio:auto}
+}
+</style>
+</head>
+<body>
+<main class="app" aria-label="Compare hai bộ tọa độ">
+  <section class="panel" aria-labelledby="excel1Title">
+    <div class="panel-heading"><h2 id="excel1Title">Excel 1</h2><span id="count1" class="badge">0 pad</span></div>
+    <div class="table-wrap"><table aria-label="Bảng tọa độ Excel 1">
+      <thead><tr><th style="width:38px">STT</th><th>X</th><th>Y</th><th>Pad number</th><th>Pad name</th></tr></thead>
+      <tbody id="rows1"></tbody>
+    </table></div>
+  </section>
+  <section class="panel" aria-labelledby="excel2Title">
+    <div class="panel-heading"><h2 id="excel2Title">Excel 2</h2><span id="count2" class="badge">0 pad</span></div>
+    <div class="table-wrap"><table aria-label="Bảng tọa độ Excel 2">
+      <thead><tr><th style="width:38px">STT</th><th>X</th><th>Y</th><th>Pad number</th><th>Pad name</th></tr></thead>
+      <tbody id="rows2"></tbody>
+    </table></div>
+  </section>
+  <aside class="actions" aria-label="Chức năng Compare">
+    <h2>Chức năng Compare</h2>
+    <section class="input-section" aria-labelledby="inputTitle">
+      <h3 id="inputTitle">Input</h3>
+      <section class="function-group" aria-labelledby="excel1Functions">
+        <h3 id="excel1Functions"><span class="legend-dot excel1-color"></span>Excel 1</h3>
+        <label class="file-label">⇧ Chọn file CSV<input id="csv1" type="file" accept=".csv,text/csv,text/plain"></label>
+        <div><label for="unit1">Đơn vị XY</label><select id="unit1"><option value="um" selected>um</option><option value="mm">mm</option><option value="in">inch</option><option value="mil">mil</option></select></div>
+        <div><label for="diameter1">Đường kính pad (<span id="unitLabel1">um</span>)</label><input id="diameter1" type="text" inputmode="decimal" value="50"></div>
+      </section>
+      <section class="function-group" aria-labelledby="excel2Functions">
+        <h3 id="excel2Functions"><span class="legend-dot excel2-color"></span>Excel 2</h3>
+        <label class="file-label">⇧ Chọn file CSV<input id="csv2" type="file" accept=".csv,text/csv,text/plain"></label>
+        <div><label for="unit2">Đơn vị XY</label><select id="unit2"><option value="um" selected>um</option><option value="mm">mm</option><option value="in">inch</option><option value="mil">mil</option></select></div>
+        <div><label for="diameter2">Đường kính pad (<span id="unitLabel2">um</span>)</label><input id="diameter2" type="text" inputmode="decimal" value="50"></div>
+      </section>
+      <section class="function-group" aria-labelledby="toleranceTitle">
+        <h3 id="toleranceTitle">Dung sai</h3>
+        <div class="tolerance-controls">
+          <div><label for="toleranceX">X (<span id="toleranceUnitX">um</span>)</label><input id="toleranceX" type="text" inputmode="decimal" value="0" aria-label="Dung sai X"></div>
+          <div><label for="toleranceY">Y (<span id="toleranceUnitY">um</span>)</label><input id="toleranceY" type="text" inputmode="decimal" value="0" aria-label="Dung sai Y"></div>
+        </div>
+      </section>
+    </section>
+    <section class="output-section" aria-labelledby="outputTitle">
+      <div class="output-heading"><h3 id="outputTitle">Output</h3><span id="mismatchCount" class="badge">0 pad lệch</span></div>
+      <div class="table-wrap"><table class="offset-table" aria-label="Độ bù tọa độ của pad đang chọn">
+        <thead><tr><th id="deltaXHead">Bù X (um)</th><th id="deltaYHead">Bù Y (um)</th></tr></thead>
+        <tbody><tr><td id="deltaX" class="output-value">—</td><td id="deltaY" class="output-value">—</td></tr></tbody>
+      </table></div>
+    </section>
+    <button id="compareBtn" class="compare-button" type="button" aria-pressed="false">Compare</button>
+  </aside>
+  <section class="panel cad-panel" aria-labelledby="cadTitle">
+    <div class="drawing-head"><h2 id="cadTitle">CAD</h2><div class="cad-head-right"><span class="badge"><span class="legend-dot excel1-color"></span><span id="cadCount1">0</span> · <span class="legend-dot excel2-color"></span><span id="cadCount2">0</span></span><a class="home-link" href="./index.html">Trang chủ</a><button id="fitCadBtn" class="fit-button" type="button">Vừa khung</button></div></div>
+    <div class="cad-area" aria-label="Khu vực vẽ CAD">
+      <canvas id="cadCanvas" aria-label="Bản vẽ Compare"></canvas>
+    </div>
+  </section>
+</main>
+<script>
+(()=>{'use strict';
+const sheets=[
+  {index:1,body:document.getElementById('rows1'),count:document.getElementById('count1'),data:[],fields:['x','y','number','name'],color:'#147c83'},
+  {index:2,body:document.getElementById('rows2'),count:document.getElementById('count2'),data:[],fields:['x','y','number','name'],color:'#f1763b'}
+];
+const canvas=document.getElementById('cadCanvas'),context=canvas.getContext('2d');
+let zoom=1,pan={x:0,y:0},drag=null,lastGeometry=null,lastDrawnPads=[],selectedPad=null,lastHitKey='',lastHitCycle=-1,compareEnabled=false;
+const clean=value=>String(value??'').replace(/\u00a0/g,' ').trim();
+function rowIsSelected(group,index){
+  return Boolean(selectedPad&&((selectedPad.group===group&&selectedPad.index===index)||(selectedPad.mate?.group===group&&selectedPad.mate.index===index)));
+}
+function revealTableRow(group,index){
+  const row=sheets[group-1].body.children[index],wrap=row?.closest('.table-wrap');
+  if(!row||!wrap)return;
+  const wrapRect=wrap.getBoundingClientRect(),rowRect=row.getBoundingClientRect();
+  const headerHeight=wrap.querySelector('thead')?.getBoundingClientRect().height??0;
+  if(rowRect.top<wrapRect.top+headerHeight)wrap.scrollBy({top:rowRect.top-(wrapRect.top+headerHeight),behavior:'smooth'});
+  else if(rowRect.bottom>wrapRect.bottom)wrap.scrollBy({top:rowRect.bottom-wrapRect.bottom,behavior:'smooth'});
+}
+function number(value){
+  let text=clean(value).replace(/\s/g,'');
+  if(/^[-+]?\d+,\d+$/.test(text))text=text.replace(',','.');
+  return text===''?NaN:Number(text);
+}
+function unitToMm(value,unit){return value*({mm:1,um:.001,in:25.4,mil:.0254}[unit]||1)}
+function mmToUnit(value,unit){return value/({mm:1,um:.001,in:25.4,mil:.0254}[unit]||1)}
+function padsFor(sheet){
+  const unit=document.getElementById('unit'+sheet.index).value;
+  const diameter=number(document.getElementById('diameter'+sheet.index).value);
+  const radius=unitToMm(Number.isFinite(diameter)&&diameter>0?diameter:50,unit)/2;
+  return sheet.data.map((row,index)=>({
+    index,x:unitToMm(number(row.x),unit),y:unitToMm(number(row.y),unit),radius,
+    number:clean(row.number).toLowerCase(),name:clean(row.name).toLowerCase()
+  })).filter(pad=>Number.isFinite(pad.x)&&Number.isFinite(pad.y));
+}
+function comparePads(){
+  const left=padsFor(sheets[0]),right=padsFor(sheets[1]),byNumber=new Map(),byName=new Map();
+  for(const pad of right){
+    if(pad.number){if(!byNumber.has(pad.number))byNumber.set(pad.number,[]);byNumber.get(pad.number).push(pad)}
+    if(pad.name){if(!byName.has(pad.name))byName.set(pad.name,[]);byName.get(pad.name).push(pad)}
+  }
+  const used=new Set(),pairs=[],pairedLeft=new Set();
+  for(const pad of left){
+    const byIdNumber=pad.number?byNumber.get(pad.number):null;
+    const byIdName=pad.name?byName.get(pad.name):null;
+    const match=byIdNumber?.find(candidate=>!used.has(candidate.index))||byIdName?.find(candidate=>!used.has(candidate.index));
+    if(match){used.add(match.index);pairedLeft.add(pad.index);pairs.push({left:pad,right:match,dx:match.x-pad.x,dy:match.y-pad.y})}
+  }
+  const remainingRight=right.filter(pad=>!used.has(pad.index));
+  for(const pad of left){
+    if(pairedLeft.has(pad.index)||!remainingRight.length)continue;
+    let closestIndex=0,closestDistance=Infinity;
+    for(let index=0;index<remainingRight.length;index++){
+      const candidate=remainingRight[index],distance=(candidate.x-pad.x)**2+(candidate.y-pad.y)**2;
+      if(distance<closestDistance){closestDistance=distance;closestIndex=index}
+    }
+    const match=remainingRight.splice(closestIndex,1)[0];
+    used.add(match.index);pairedLeft.add(pad.index);pairs.push({left:pad,right:match,dx:match.x-pad.x,dy:match.y-pad.y});
+  }
+  const toleranceInputX=number(document.getElementById('toleranceX').value),toleranceInputY=number(document.getElementById('toleranceY').value);
+  const toleranceX=unitToMm(Number.isFinite(toleranceInputX)&&toleranceInputX>=0?toleranceInputX:0,document.getElementById('unit1').value);
+  const toleranceY=unitToMm(Number.isFinite(toleranceInputY)&&toleranceInputY>=0?toleranceInputY:0,document.getElementById('unit1').value);
+  const matchedLeft=new Set(),matchedRight=new Set(),pairsByLeft=new Map(),pairsByRight=new Map();
+  for(const pair of pairs){pairsByLeft.set(pair.left.index,pair);pairsByRight.set(pair.right.index,pair)}
+  let mismatchCount=0;
+  if(compareEnabled&&left.length&&right.length){
+    mismatchCount=left.filter(pad=>!pairsByLeft.has(pad.index)).length+right.filter(pad=>!pairsByRight.has(pad.index)).length;
+    for(const pair of pairs){
+      if(Math.abs(pair.dx)<=toleranceX+1e-12&&Math.abs(pair.dy)<=toleranceY+1e-12){
+        matchedLeft.add(pair.left.index);
+        matchedRight.add(pair.right.index);
+      }else mismatchCount++;
+    }
+  }
+  const unit=document.getElementById('unit1').value;
+  document.getElementById('deltaXHead').textContent='Bù X ('+(unit==='in'?'inch':unit)+')';
+  document.getElementById('deltaYHead').textContent='Bù Y ('+(unit==='in'?'inch':unit)+')';
+  document.getElementById('mismatchCount').textContent=mismatchCount+' pad lệch';
+  const selectedPair=compareEnabled&&selectedPad?(selectedPad.group===1?pairsByLeft.get(selectedPad.index):pairsByRight.get(selectedPad.index)):null;
+  const selectedList=selectedPad?(selectedPad.group===1?left:right):[];
+  const selectedData=selectedList.find(pad=>pad.index===selectedPad?.index);
+  document.getElementById('deltaX').textContent=selectedPair?mmToUnit(selectedPair.dx,unit).toFixed(6).replace(/\.?0+$/,''):compareEnabled&&selectedPad?(selectedData?'Không có cặp':'—'):'—';
+  document.getElementById('deltaY').textContent=selectedPair?mmToUnit(selectedPair.dy,unit).toFixed(6).replace(/\.?0+$/,''):compareEnabled&&selectedPad?(selectedData?'Không có cặp':'—'):'—';
+  return{left,right,pairs,matchedLeft,matchedRight,pairsByLeft,pairsByRight,mismatchCount};
+}
+function visibleRowCount(body){
+  const wrap=body.closest('.table-wrap'),header=wrap.querySelector('thead').getBoundingClientRect().height;
+  return Math.max(14,Math.ceil(Math.max(0,wrap.clientHeight-header)/15));
+}
+function renderSheet(sheet){
+  const body=sheet.body;body.replaceChildren();
+  const rows=Math.max(sheet.data.length+4,visibleRowCount(body));
+  for(let row=0;row<rows;row++){
+    const tr=document.createElement('tr'),index=document.createElement('td');
+    tr.classList.toggle('selected',rowIsSelected(sheet.index,row));
+    index.className='index';index.textContent=String(row+1);tr.append(index);
+    for(const field of sheet.fields){
+      const cell=document.createElement('td');cell.contentEditable=String(sheet.index===1);cell.spellcheck=false;
+      cell.dataset.row=String(row);cell.dataset.field=field;cell.textContent=sheet.data[row]?.[field]??'';
+      cell.title=sheet.index===1?'Nhập hoặc dán vùng dữ liệu từ Excel bắt đầu tại ô này':'Excel 2 đã khóa, chỉ cập nhật bằng file CSV';
+      cell.setAttribute('aria-readonly',String(sheet.index!==1));
+      if(sheet.index===1)cell.addEventListener('blur',()=>{
+        const value=clean(cell.textContent);
+        if(value){sheet.data[row]??={};sheet.data[row][field]=value}
+        else if(sheet.data[row])delete sheet.data[row][field];
+        updateCount(sheet);
+        drawCad();
+      });
+      tr.append(cell);
+    }
+    body.append(tr);
+  }
+  updateCount(sheet);
+}
+function updateCount(sheet){
+  const count=sheet.data.filter(row=>row&&Number.isFinite(number(row.x))&&Number.isFinite(number(row.y))).length;
+  sheet.count.textContent=count+' pad';
+  document.getElementById('cadCount'+sheet.index).textContent=String(count);
+}
+function splitDelimitedLine(line,separator){
+  const cells=[];let value='',quoted=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'&&quoted&&line[i+1]==='"'){value+='"';i++;continue}
+    if(ch==='"'){quoted=!quoted;continue}
+    if(ch===separator&&!quoted){cells.push(value.trim());value='';continue}
+    value+=ch;
+  }
+  cells.push(value.trim());return cells;
+}
+function parseCsv(text){
+  const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(line=>line.trim());
+  if(!lines.length)return[];
+  const separators=[',',';','\t'];
+  const separator=separators.sort((a,b)=>splitDelimitedLine(lines[0],b).length-splitDelimitedLine(lines[0],a).length)[0];
+  const records=lines.map(line=>splitDelimitedLine(line,separator));
+  const normalize=value=>clean(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/[^a-z0-9]/g,'');
+  const headers=records[0].map(normalize),find=aliases=>headers.findIndex(value=>aliases.includes(value));
+  const xIndex=find(['x','xmm','xum','xin','xinch','xmil','coordx','xcoord','xcoordinate','toadox']);
+  const yIndex=find(['y','ymm','yum','yin','yinch','ymil','coordy','ycoord','ycoordinate','toadoy']);
+  const hasHeader=xIndex>=0&&yIndex>=0;
+  const numberIndex=hasHeader?find(['padnumber','number','padno','padnum','pinno','pinnumber']):2;
+  const nameIndex=hasHeader?find(['padname','name','pinname','tenpad']):3;
+  return records.slice(hasHeader?1:0).map(row=>({x:clean(row[hasHeader?xIndex:0]),y:clean(row[hasHeader?yIndex:1]),number:numberIndex>=0?clean(row[numberIndex]):'',name:nameIndex>=0?clean(row[nameIndex]):''})).filter(row=>Number.isFinite(number(row.x))&&Number.isFinite(number(row.y)));
+}
+function importCsv(sheet,file){
+  file.text().then(text=>{
+    const rows=parseCsv(text);
+    if(!rows.length){alert('Không đọc được tọa độ X/Y trong file CSV.');return}
+    sheet.data=rows;renderSheet(sheet);zoom=1;pan={x:0,y:0};drawCad();
+  }).catch(()=>alert('Không đọc được file CSV này.'));
+}
+document.addEventListener('paste',event=>{
+  const cell=event.target.closest?.('td[contenteditable="true"]');
+  if(!cell)return;
+  const sheet=sheets.find(item=>item.body.contains(cell));
+  if(!sheet)return;
+  if(sheet.index===2){event.preventDefault();return}
+  const text=event.clipboardData?.getData('text/plain')||'';
+  if(!text.includes('\t')&&!text.includes('\n'))return;
+  event.preventDefault();
+  const startRow=Number(cell.dataset.row),startColumn=sheet.fields.indexOf(cell.dataset.field);
+  text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n').replace(/\n+$/,'').split('\n').forEach((line,rowOffset)=>{
+    const rowIndex=startRow+rowOffset,values=line.split('\t');sheet.data[rowIndex]??={};
+    values.forEach((value,columnOffset)=>{const field=sheet.fields[startColumn+columnOffset];if(field)sheet.data[rowIndex][field]=clean(value)});
+  });
+  sheets.forEach(renderSheet);drawCad();
+});
+function drawCad(){
+  const rect=canvas.getBoundingClientRect(),ratio=window.devicePixelRatio||1;
+  const pixelWidth=Math.max(1,Math.round(rect.width*ratio)),pixelHeight=Math.max(1,Math.round(rect.height*ratio));
+  if(canvas.width!==pixelWidth||canvas.height!==pixelHeight){canvas.width=pixelWidth;canvas.height=pixelHeight}
+  context.setTransform(ratio,0,0,ratio,0,0);context.clearRect(0,0,rect.width,rect.height);
+  const comparison=comparePads();
+  const left=comparison.left.map(pad=>({...pad,group:1,matched:comparison.matchedLeft.has(pad.index)}));
+  const right=comparison.right.map(pad=>({...pad,group:2,matched:comparison.matchedRight.has(pad.index)}));
+  const all=[...left,...right],margin=36,width=rect.width,height=rect.height;
+  let minX=-5,maxX=5,minY=-5,maxY=5;
+  if(all.length){
+    minX=Math.min(...all.map(pad=>pad.x-pad.radius));maxX=Math.max(...all.map(pad=>pad.x+pad.radius));
+    minY=Math.min(...all.map(pad=>pad.y-pad.radius));maxY=Math.max(...all.map(pad=>pad.y+pad.radius));
+  }
+  const spanX=Math.max(maxX-minX,1e-9),spanY=Math.max(maxY-minY,1e-9);
+  const fitScale=Math.max(.000001,Math.min((width-margin*2)/spanX,(height-margin*2)/spanY));
+  const scale=fitScale*zoom,centerX=(minX+maxX)/2,centerY=(minY+maxY)/2;
+  const mapX=x=>width/2+(x-centerX)*scale+pan.x,mapY=y=>height/2-(y-centerY)*scale+pan.y;
+  lastGeometry={fitScale,centerX,centerY,width,height};
+  const originX=mapX(0),originY=mapY(0);
+  lastDrawnPads=[];
+  const matched=left.filter(pad=>pad.matched);
+  const unmatched=[...left.filter(pad=>!pad.matched),...right.filter(pad=>!pad.matched)];
+  for(const pad of matched){
+    const x=mapX(pad.x),y=mapY(pad.y),radius=Math.max(.75,pad.radius*scale);
+    context.beginPath();context.arc(x,y,radius,0,Math.PI*2);
+    context.fillStyle='#32a66a88';context.fill();context.strokeStyle='#147c83';context.lineWidth=1.4;context.stroke();
+    lastDrawnPads.push({group:pad.group,index:pad.index,x,y,radius:Math.max(radius,6)});
+    const pair=comparison.pairsByLeft.get(pad.index);
+    if(pair)lastDrawnPads.push({group:2,index:pair.right.index,x,y,radius:Math.max(radius,6)});
+  }
+  for(const pad of unmatched){
+    const x=mapX(pad.x),y=mapY(pad.y),radius=Math.max(.75,pad.radius*scale);
+    context.beginPath();context.arc(x,y,radius,0,Math.PI*2);context.fillStyle='#fffdf8';context.fill();
+  }
+  for(const pad of unmatched){
+    const x=mapX(pad.x),y=mapY(pad.y),radius=Math.max(.75,pad.radius*scale);
+    context.beginPath();context.arc(x,y,radius,0,Math.PI*2);context.strokeStyle=pad.group===1?'#147c83':'#f1763b';context.lineWidth=1.4;context.stroke();
+    lastDrawnPads.push({group:pad.group,index:pad.index,x,y,radius:Math.max(radius,6)});
+  }
+  const ringPoints=new Map();
+  for(const pad of lastDrawnPads){
+    if(!rowIsSelected(pad.group,pad.index))continue;
+    const key=Math.round(pad.x*10)+':'+Math.round(pad.y*10);
+    if(!ringPoints.has(key))ringPoints.set(key,pad);
+  }
+  for(const pad of ringPoints.values()){
+    context.beginPath();context.arc(pad.x,pad.y,Math.max(pad.radius+4,8),0,Math.PI*2);context.strokeStyle='#f2c94c';context.lineWidth=3;context.stroke();
+  }
+  context.save();context.strokeStyle='#df3f45';context.lineWidth=1.5;
+  context.beginPath();context.moveTo(originX-8,originY);context.lineTo(originX+8,originY);context.moveTo(originX,originY-8);context.lineTo(originX,originY+8);context.stroke();context.restore();
+}
+function selectPad(group,index){
+  selectedPad={group,index};
+  const comparison=comparePads();
+  const pair=group===1?comparison.pairsByLeft.get(index):comparison.pairsByRight.get(index);
+  if(pair)selectedPad.mate=group===1?{group:2,index:pair.right.index}:{group:1,index:pair.left.index};
+  for(const sheet of sheets){
+    const rows=[...sheet.body.querySelectorAll('tr')];
+    rows.forEach((row,rowIndex)=>row.classList.toggle('selected',rowIsSelected(sheet.index,rowIndex)));
+  }
+  revealTableRow(group,index);
+  if(selectedPad.mate)revealTableRow(selectedPad.mate.group,selectedPad.mate.index);
+  drawCad();
+}
+for(const sheet of sheets){
+  document.getElementById('csv'+sheet.index).addEventListener('change',event=>{const file=event.target.files?.[0];if(file)importCsv(sheet,file);event.target.value=''});
+  document.getElementById('unit'+sheet.index).addEventListener('change',()=>{
+    document.getElementById('unitLabel'+sheet.index).textContent=document.getElementById('unit'+sheet.index).value==='in'?'inch':document.getElementById('unit'+sheet.index).value;
+    if(sheet.index===1){const label=document.getElementById('unit'+sheet.index).value==='in'?'inch':document.getElementById('unit'+sheet.index).value;document.getElementById('toleranceUnitX').textContent=label;document.getElementById('toleranceUnitY').textContent=label}
+    drawCad();
+  });
+  document.getElementById('diameter'+sheet.index).addEventListener('input',drawCad);
+}
+document.getElementById('toleranceX').addEventListener('input',drawCad);
+document.getElementById('toleranceY').addEventListener('input',drawCad);
+document.getElementById('compareBtn').addEventListener('click',()=>{
+  if(!compareEnabled&&(!padsFor(sheets[0]).length||!padsFor(sheets[1]).length)){
+    alert('Hãy nhập tọa độ cho cả Excel 1 và Excel 2 trước khi Compare.');return;
+  }
+  compareEnabled=!compareEnabled;
+  const button=document.getElementById('compareBtn');
+  button.classList.toggle('active',compareEnabled);button.setAttribute('aria-pressed',String(compareEnabled));
+  drawCad();
+});
+canvas.addEventListener('pointerdown',event=>{
+  if(event.button!==0)return;
+  drag={pointerId:event.pointerId,x:event.clientX,y:event.clientY,panX:pan.x,panY:pan.y,moved:false};
+  canvas.classList.add('dragging');canvas.setPointerCapture(event.pointerId);event.preventDefault();
+});
+canvas.addEventListener('pointermove',event=>{
+  if(!drag||event.pointerId!==drag.pointerId)return;
+  if(Math.hypot(event.clientX-drag.x,event.clientY-drag.y)>3)drag.moved=true;
+  if(!drag.moved)return;
+  pan.x=drag.panX+event.clientX-drag.x;pan.y=drag.panY+event.clientY-drag.y;drawCad();
+});
+function endDrag(event){
+  if(!drag||event.pointerId!==drag.pointerId)return;
+  const finished=drag;drag=null;canvas.classList.remove('dragging');
+  if(event.type==='pointerup'&&!finished.moved){
+    const rect=canvas.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top;
+    const hits=lastDrawnPads.map(pad=>({...pad,distance:Math.hypot(x-pad.x,y-pad.y)})).filter(pad=>pad.distance<=pad.radius+2).sort((a,b)=>a.distance-b.distance);
+    const candidates=hits.length?hits.filter(pad=>pad.distance<=hits[0].distance+1).reverse():[];
+    if(candidates.length){
+      const key=Math.round(x/4)+':'+Math.round(y/4),cycle=key===lastHitKey?(lastHitCycle+1)%candidates.length:0;
+      lastHitKey=key;lastHitCycle=cycle;const hit=candidates[cycle];selectPad(hit.group,hit.index);
+    }
+  }
+}
+canvas.addEventListener('pointerup',endDrag);
+canvas.addEventListener('pointercancel',endDrag);
+canvas.addEventListener('wheel',event=>{
+  event.preventDefault();
+  if(!lastGeometry)return;
+  const rect=canvas.getBoundingClientRect(),anchorX=event.clientX-rect.left,anchorY=event.clientY-rect.top;
+  const previous=zoom,next=Math.max(.02,Math.min(80,zoom*(event.deltaY<0?1.15:1/1.15))),ratio=next/previous;
+  pan.x=anchorX-lastGeometry.width/2-(anchorX-lastGeometry.width/2-pan.x)*ratio;
+  pan.y=anchorY-lastGeometry.height/2-(anchorY-lastGeometry.height/2-pan.y)*ratio;
+  zoom=next;drawCad();
+},{passive:false});
+document.getElementById('fitCadBtn').addEventListener('click',()=>{zoom=1;pan={x:0,y:0};drawCad()});
+const observer=new ResizeObserver(()=>{sheets.forEach(renderSheet);drawCad()});
+document.querySelectorAll('.table-wrap,.cad-area').forEach(element=>observer.observe(element));
+sheets.forEach(renderSheet);drawCad();
+})();
+</script>
+</body>
+</html>
