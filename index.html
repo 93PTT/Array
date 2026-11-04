@@ -23,6 +23,8 @@
       --orange-bright: #ef9568;
       --gold: #dfbd63;
       --gold-bright: #efd681;
+      --blue: #6685a7;
+      --blue-bright: #8eabc9;
       --cream: #fffaf0;
       --line: #e5ddca;
     }
@@ -93,6 +95,18 @@
       --tile-text: #294347;
     }
 
+    .tile:nth-child(5) {
+      --tile-accent: var(--blue);
+      --tile-bright: var(--blue-bright);
+      --tile-text: #fffdf8;
+    }
+
+    .tile:nth-child(6) {
+      --tile-accent: #e7e1d4;
+      --tile-bright: #eee9df;
+      --tile-text: #294347;
+    }
+
     .tile:hover,
     .tile:focus-visible {
       transform: translateY(-3px);
@@ -136,6 +150,8 @@
       <a class="tile" href="dut.html">Dut</a>
       <a class="tile" href="./compare.html">Compare</a>
       <div class="tile">Offset</div>
+      <a class="tile" href="./cantilever-map.html">Cantilever Map</a>
+      <div class="tile" aria-label="Ô trống" aria-hidden="true"></div>
     </nav>
   </main>
 </body>
