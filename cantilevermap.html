@@ -129,18 +129,28 @@ function exportDXF(){
   pair(10,x1*mm);pair(20,y1*mm);pair(30,0);
   pair(11,x2*mm);pair(21,y2*mm);pair(31,0);
  };
- const rect=p=>{
+ const rect=(p,layer='PADS',aci=4)=>{
   const h=s/2,x=p.x,y=p.y;
   [[x-h,y-h,x+h,y-h],[x+h,y-h,x+h,y+h],[x+h,y+h,x-h,y+h],[x-h,y+h,x-h,y-h]]
-   .forEach(a=>line(a[0],a[1],a[2],a[3],'PADS',4));
+   .forEach(a=>line(a[0],a[1],a[2],a[3],layer,aci));
  };
  // Ô đặc có màu probe (SOLID: thứ tự đỉnh trái-dưới, phải-dưới, trái-trên, phải-trên)
  const solid=(p,aci)=>{
   const h=s/2;
-  pair(0,'SOLID');pair(8,'PROBE_FILL');pair(62,aci);
+  pair(0,'SOLID');pair(8,'PROBE_'+(p.probe+1));pair(62,aci);
   [[p.x-h,p.y-h],[p.x+h,p.y-h],[p.x-h,p.y+h],[p.x+h,p.y+h]].forEach((q,i)=>{
    pair(10+i,q[0]*mm);pair(20+i,q[1]*mm);pair(30+i,0);
   });
+ };
+ // Hatch bằng đường gạch chéo 45° (LINE thật) để SolidWorks và các phần mềm khác vẫn nhận được
+ const hatchLines=(p,aci)=>{
+  const h=s/2,step=s/10,layer='PROBE_'+(p.probe+1);
+  for(let c=-s+step;c<s-1e-9;c+=step){
+   if(Math.abs(c)<1e-9)continue;
+   if(c>0)line(p.x-h+c,p.y-h,p.x+h,p.y+h-c,layer,aci);
+   else line(p.x-h,p.y-h-c,p.x+h+c,p.y+h,layer,aci);
+  }
+  line(p.x-h,p.y-h,p.x+h,p.y+h,layer,aci);
  };
  const txt=(text,x,y,height,rotation=0,align=1)=>{
   if(!String(text??'').trim())return;
@@ -180,6 +190,7 @@ function exportDXF(){
  pair(0,'ENDTAB');
 
  const layers=[['0',7,'CONTINUOUS'],['PADS',4,'CONTINUOUS'],['PROBE_FILL',7,'CONTINUOUS'],['PAD_LABELS',7,'CONTINUOUS'],['LEADERS',8,'CONTINUOUS'],['CONNECTOR_OUTLINE',6,'CM_DASHED']];
+ PROBES.forEach((q,i)=>layers.push(['PROBE_'+(i+1),q.aci,'CONTINUOUS']));
  pair(0,'TABLE');pair(2,'LAYER');pair(70,layers.length);
  for(const [name,color,type] of layers){pair(0,'LAYER');pair(2,name);pair(70,0);pair(62,color);pair(6,type)}
  pair(0,'ENDTAB');
@@ -198,8 +209,7 @@ function exportDXF(){
  }
  for(const p of state.pads){
   const color=p.probe===null?null:PROBES[p.probe].aci;
-  if(color!==null)solid(p,color);
-  rect(p);
+  if(color!==null){solid(p,color);hatchLines(p,color);rect(p,'PROBE_'+(p.probe+1),color)}else rect(p);
   if(!p.direction||p.lengthIndex===null)continue;
   const dx=p.direction==='left'?-1:p.direction==='right'?1:0;
   const dy=p.direction==='top'?1:p.direction==='bottom'?-1:0;
